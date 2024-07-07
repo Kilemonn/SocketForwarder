@@ -91,9 +91,6 @@ namespace forwarder
             {
                 std::cout << "Failed to accept incoming client: " << e.what() << std::endl;
             }
-            
-            using namespace std::chrono_literals;
-            std::this_thread::sleep_for(2ms);
         }
 
         // If we exit the loop, close the server socket
@@ -110,9 +107,13 @@ namespace forwarder
                 for (size_t i = 0; i < it->second.size(); i++)
                 {
                     kt::TCPSocket receiveSocket = it->second[i];
-                    if (receiveSocket.ready())
+                    if (receiveSocket.ready(1))
                     {
                         std::string received = receiveSocket.receiveAmount(MAX_READ_IN_DEFAULT);
+                        if (received.empty())
+                        {
+                            continue;
+                        }
                         std::cout << "Group [" << groupID << "] with [" << it->second.size() << "] nodes. Received content [" << received << "] from peer [" << i << "] forwarding to other peers..." << std::endl;
                         for (size_t j = 0; j < it->second.size(); j++)
                         {
@@ -132,9 +133,6 @@ namespace forwarder
                     }
                 }
             }
-
-            using namespace std::chrono_literals;
-            std::this_thread::sleep_for(10ms);
         }
 
         // Once we are out of the loop just run through and close everything
