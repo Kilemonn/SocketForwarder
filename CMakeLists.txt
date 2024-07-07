@@ -26,14 +26,13 @@ add_executable(SocketForwarder
 )
 
 target_include_directories(SocketForwarder
-    # PRIVATE socket-forwarder/environment
     PUBLIC ${SOCKET_LIB_SOURCE}/src
 )
 
 target_link_libraries(SocketForwarder 
-    PRIVATE ${SOCKET_LIB_SOURCE}/libCppSocketLibrary.a
+    PUBLIC ${SOCKET_LIB_SOURCE}/libCppSocketLibrary.a
     pthread
     bluetooth
 )
 
-# add_subdirectory(tests)
+add_subdirectory(tests)
