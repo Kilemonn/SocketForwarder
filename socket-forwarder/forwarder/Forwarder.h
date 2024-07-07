@@ -1,6 +1,5 @@
 #pragma once
 
-#include <unordered_map>
 #include <string>
 #include <thread>
 #include <vector>
@@ -18,7 +17,7 @@ namespace forwarder
 
     std::thread startUDPForwarder(kt::UDPSocket&);
     void startUDPListener(kt::UDPSocket);
-    bool udpGroupWithIdExists(std::string&);
+    size_t udpGroupMemberCount();
     
     void stopForwarder();
 }

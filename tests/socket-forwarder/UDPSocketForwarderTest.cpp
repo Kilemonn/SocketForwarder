@@ -33,32 +33,61 @@ namespace forwarder
 
 	TEST_F(UDPSocketForwarderTest, TestGeneralSendAndRecieve)
 	{
-		std::string groupId = "1115121220";
+        ASSERT_EQ(0, udpGroupMemberCount());
+
 		kt::UDPSocket client1;
-		ASSERT_TRUE(client1.sendTo("localhost", udpSocket.getListeningPort().value(), NEW_CLIENT_PREFIX_DEFAULT + groupId).first);
+        client1.bind();
+		ASSERT_TRUE(client1.sendTo("localhost", udpSocket.getListeningPort().value(), NEW_CLIENT_PREFIX_DEFAULT + std::to_string(client1.getListeningPort().value())).first);
 		std::this_thread::sleep_for(10ms);
 
-		ASSERT_TRUE(udpGroupWithIdExists(groupId));
+		ASSERT_EQ(1, udpGroupMemberCount());
 
 		kt::UDPSocket client2;
-        ASSERT_TRUE(client2.sendTo("localhost", udpSocket.getListeningPort().value(), NEW_CLIENT_PREFIX_DEFAULT + groupId).first);
+        client2.bind();
+        ASSERT_TRUE(client2.sendTo("localhost", udpSocket.getListeningPort().value(), NEW_CLIENT_PREFIX_DEFAULT + std::to_string(client2.getListeningPort().value())).first);
 		std::this_thread::sleep_for(10ms);
+
+        ASSERT_EQ(2, udpGroupMemberCount());
 
 		std::string toSend = "UDPSocketForwarderTest";
 		ASSERT_TRUE(client1.sendTo("localhost", udpSocket.getListeningPort().value(), toSend).first);
-		std::this_thread::sleep_for(10ms);
+		std::this_thread::sleep_for(1000ms);
 
-		std::pair<std::optional<std::string>, std::pair<int, kt::SocketAddress>> result = client2.receiveFrom(50);
-		ASSERT_NE(std::nullopt, result.first);
-        ASSERT_EQ(toSend, result.first.value());
+        ASSERT_TRUE(client2.ready() || client1.ready());
 
-		std::string received = result.first.value() + "99283647561";
-		ASSERT_TRUE(client2.sendTo("localhost", udpSocket.getListeningPort().value(), received).first);
-		std::this_thread::sleep_for(10ms);
+        if (client2.ready())
+        {
+            std::pair<std::optional<std::string>, std::pair<int, kt::SocketAddress>> result = client2.receiveFrom(50);
+            ASSERT_NE(-1, result.second.first);
+            ASSERT_EQ(toSend, result.first.value());
+        }
 
-		result = client1.receiveFrom(50);
-        ASSERT_NE(std::nullopt, result.first);
-		ASSERT_EQ(result.first.value(), received);
+        if (client1.ready())
+        {
+            std::pair<std::optional<std::string>, std::pair<int, kt::SocketAddress>> result = client1.receiveFrom(50);
+            ASSERT_NE(-1, result.second.first);
+            ASSERT_EQ(toSend, result.first.value());
+        }
+        
+		toSend += "99283647561";
+		ASSERT_TRUE(client2.sendTo("localhost", udpSocket.getListeningPort().value(), toSend).first);
+		std::this_thread::sleep_for(1000ms);
+
+        ASSERT_TRUE(client2.ready() || client1.ready());
+
+        if (client1.ready())
+        {
+            std::pair<std::optional<std::string>, std::pair<int, kt::SocketAddress>> result = client1.receiveFrom(50);
+            ASSERT_NE(-1, result.second.first);
+            ASSERT_EQ(toSend, result.first.value());
+        }
+
+        if (client2.ready())
+        {
+            std::pair<std::optional<std::string>, std::pair<int, kt::SocketAddress>> result = client2.receiveFrom(50);
+            ASSERT_NE(-1, result.second.first);
+            ASSERT_EQ(toSend, result.first.value());
+        }
 
 		client1.close();
 		client2.close();

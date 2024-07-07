@@ -4,6 +4,8 @@
 #include <socketexceptions/SocketException.hpp>
 #include <socketexceptions/TimeoutException.hpp>
 
+#include <unordered_map>
+#include <unordered_set>
 #include <thread>
 #include <chrono>
 #include <vector>
@@ -28,8 +30,9 @@ namespace forwarder
         }
     };
 
-    std::unordered_map<std::string, std::vector<kt::SocketAddress>> udpGroupToAddress;
-    std::unordered_map<kt::SocketAddress, std::string, AddressHash, AddressEqual> udpAddressToGroupId;
+    // For UDP since we don't know who is sending specific messages from, ALL UDP connections will be treated as the same group
+    // std::unordered_set<kt::SocketAddress, AddressHash, AddressEqual> udpKnownPeers;
+    std::unordered_set<std::string> udpKnownPeers;
 
     bool forwarderIsRunning;
 
@@ -172,59 +175,46 @@ namespace forwarder
 
                 std::cout << "Received message [" << message << "] from address: " << kt::getAddress(address).value() << ":" << kt::getPortNumber(address) << std::endl;
 
-                // Check if we have have received from this address already
-                auto it = udpAddressToGroupId.find(address);
-                if (it != udpAddressToGroupId.end())
+                // This is a new client, check their first message content
+                if (message.rfind(NEW_CLIENT_PREFIX_DEFAULT, 0) == 0)
                 {
-                    // Existing client
-                    std::string groupId = it->second;
-                    auto entry = udpGroupToAddress.find(groupId);
-                    std::cout << "Received message from client we have seen before in group [" << groupId << "] with [" << entry->second.size() << "] node(s)." << std::endl;
-                    for (kt::SocketAddress addr : entry->second)
-                    {
-                        if (std::memcmp(&addr, &address, sizeof(address)) != 0)
-                        {
-                            udpSocket.sendTo(message, addr, sizeof(addr));
-                        }
-                    }
+                    std::string recievingPort = message.substr(NEW_CLIENT_PREFIX_DEFAULT.size());
+                    std::cout << "New client requested to joined UDP group with port [" << recievingPort << "]" << std::endl;
+
+                    address.ipv4.sin_port = htons(std::atoi(recievingPort.c_str()));
+                    addrinfo hints{};
+                    hints.ai_family = AF_UNSPEC;
+                    hints.ai_socktype = SOCK_DGRAM;
+                    hints.ai_protocol = IPPROTO_UDP;
+                    kt::SocketAddress resolvedAddress = kt::resolveToAddresses(kt::getAddress(address).value(), std::atoi(recievingPort.c_str()), hints).first[0];
+
+                    std::cout << "Resolved address with port to: " << kt::getAddress(resolvedAddress).value() << ":" << kt::getPortNumber(resolvedAddress) << std::endl;
+                    // udpKnownPeers.emplace(resolvedAddress);
+                    udpKnownPeers.emplace(kt::getAddress(resolvedAddress).value() + ":" + std::to_string(kt::getPortNumber(resolvedAddress)));
                 }
                 else
                 {
-                    // This is a new client, check their first message content
-                    if (message.rfind(NEW_CLIENT_PREFIX_DEFAULT, 0) == 0)
+                    std::cout << "UDP - Received message [" << message << "] forwarding to peers." << std::endl;
+                
+                    // for (kt::SocketAddress addr : udpKnownPeers)
+                    for (std::string addr : udpKnownPeers)
                     {
-                        std::string groupId = message.substr(NEW_CLIENT_PREFIX_DEFAULT.size());
-                        std::cout << "New client requested to join group [" << groupId << "]" << std::endl;
-                        
-                        udpAddressToGroupId.insert({address, groupId});
-
-                        if (udpGroupToAddress.find(groupId) != udpGroupToAddress.end())
-                        {
-                            std::cout << "Group [" << groupId << "] does not exist, creating new group." << std::endl;
-                            
-                            std::vector<kt::SocketAddress> addresses;
-                            addresses.push_back(address);
-                            udpGroupToAddress.insert(std::make_pair(groupId, addresses));
-                        }
-                        else
-                        {
-                            std::cout << "Group [" << groupId << "] exists! Adding client to the existing group." << std::endl;
-                            udpGroupToAddress[groupId].push_back(address);
-                        }
-                    }
-                    else
-                    {
-                        // No-Op, a client we have no seen before and their first message is not to join a group
-                        std::cout << "Unseen client sent message that does not match new client prefix." << std::endl;
+                        // std::pair<bool, int> result = udpSocket.sendTo(message, addr, sizeof(addr));
+                        // std::cout << "Forwarded to peer with address: " << kt::getAddress(addr).value() << ":" << kt::getPortNumber(addr) << ". With result " << result.second << std::endl;
+                    
+                        std::string hostname = addr.substr(0, addr.find_first_of(':'));
+                        std::string port = addr.substr(addr.find_first_of(':') + 1);
+                        std::pair<bool, std::pair<int, kt::SocketAddress>> result = udpSocket.sendTo(hostname, std::atoi(port.c_str()), message);
+                        std::cout << "Forwarded to peer with address: " << hostname << " : " << port << ". With result " << result.second.first << std::endl;
                     }
                 }
             }
         }
     }
 
-    bool udpGroupWithIdExists(std::string& groupId)
+    size_t udpGroupMemberCount()
     {
-        return udpGroupToAddress.find(groupId) != udpGroupToAddress.end();
+        return udpKnownPeers.size();
     }
 
     void stopForwarder()
