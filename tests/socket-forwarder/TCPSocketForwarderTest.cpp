@@ -27,6 +27,8 @@ namespace forwarder
 
 			runningThreads.first.join();
 			runningThreads.second.join();
+
+			serverSocket.close();
         }
     };
 
