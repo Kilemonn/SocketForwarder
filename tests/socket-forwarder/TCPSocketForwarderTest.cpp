@@ -23,7 +23,7 @@ namespace forwarder
 
         void TearDown() override
         {
-			stopTCPForwarder();
+			stopForwarder();
 
 			runningThreads.first.join();
 			runningThreads.second.join();
@@ -32,7 +32,7 @@ namespace forwarder
         }
     };
 
-	TEST_F(TCPSocketForwarderTest, Test1)
+	TEST_F(TCPSocketForwarderTest, TestGeneralSendAndRecieve)
 	{
 		std::string groupId = "98235123";
 		kt::TCPSocket client1("localhost", serverSocket.getPort());

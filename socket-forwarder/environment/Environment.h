@@ -13,5 +13,5 @@ namespace forwarder
     const std::string NEW_CLIENT_PREFIX_DEFAULT = "SOCKETFORWARDER-NEW:";
     const unsigned short MAX_READ_IN_DEFAULT = 10640;
 
-    std::optional<std::string> getEnvironmentVariableValue(std::string environmentVariableKey);
+    std::optional<std::string> getEnvironmentVariableValue(std::string&);
 }

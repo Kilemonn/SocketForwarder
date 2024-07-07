@@ -11,7 +11,7 @@
 int main(int argc, char** argv)
 {
     std::optional<kt::ServerSocket> serverSocket = forwarder::setUpTcpServerSocket(argc > 1 ? std::make_optional(std::string(argv[1])) : std::nullopt);
-    std::optional<kt::UDPSocket> udpSocket = forwarder::setUpUDPSocket();
+    std::optional<kt::UDPSocket> udpSocket = forwarder::setUpUDPSocket(argc > 2 ? std::make_optional(std::string(argv[2])) : std::nullopt);
 
     if (serverSocket.has_value())
     {
@@ -27,9 +27,11 @@ int main(int argc, char** argv)
         std::cout << "No TCP socket was setup and listening since [" << forwarder::TCP_PORT << "] environment variable was not provided." << std::endl;
     }
 
-    if (udpSocket.has_value())
-    {
-        std::cout << "UDP Socket setup" << std::endl;
+    if (udpSocket.has_value() && udpSocket.value().getListeningPort().has_value())
+    {        
+        std::cout << "Running UDP forwarder on port [" << udpSocket.value().getListeningPort().value() << "]" << std::endl;
+
+        
     }
     else
     {

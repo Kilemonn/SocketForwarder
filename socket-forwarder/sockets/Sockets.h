@@ -7,7 +7,7 @@
 
 namespace forwarder
 {
-    std::optional<kt::ServerSocket> setUpTcpServerSocket(std::optional<std::string> defaultPort = std::nullopt);
+    std::optional<kt::ServerSocket> setUpTcpServerSocket(std::optional<std::string> = std::nullopt);
 
-    std::optional<kt::UDPSocket> setUpUDPSocket();
+    std::optional<kt::UDPSocket> setUpUDPSocket(std::optional<std::string> = std::nullopt);
 }

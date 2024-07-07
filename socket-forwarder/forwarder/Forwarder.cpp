@@ -12,7 +12,8 @@ namespace forwarder
 {
     std::unordered_map<std::string, std::vector<kt::TCPSocket>> tcpSessions;
 
-    std::unordered_map<std::string, std::vector<kt::SocketAddress>> udpSessions;
+    std::unordered_map<std::string, std::vector<kt::SocketAddress>> udpGroupToAddress;
+    std::unordered_map<kt::SocketAddress, std::string> udpAddressToGroupId;
 
     bool forwarderIsRunning = true;
 
@@ -129,13 +130,85 @@ namespace forwarder
         tcpSessions.clear();
     }
 
-    void stopTCPForwarder()
-    {
-        forwarderIsRunning = false;
-    }
-
     bool tcpGroupWithIdExists(std::string& groupId)
     {
         return tcpSessions.find(groupId) != tcpSessions.end();
+    }
+
+    std::thread startUDPForwarder(kt::UDPSocket& udpSocket)
+    {
+        std::thread listeningThread(startUDPListener, udpSocket);
+        return listeningThread;
+    }
+
+    void startUDPListener(kt::UDPSocket udpSocket)
+    {
+        while (forwarderIsRunning)
+        {
+            std::pair<std::optional<std::string>, std::pair<int, kt::SocketAddress>> result = udpSocket.receiveFrom(MAX_READ_IN_DEFAULT);
+            
+            if (result.second.first > 0 && result.first.has_value())
+            {
+                std::string message = result.first.value();
+                kt::SocketAddress address = result.second.second;
+
+                // Check if we have have received from this address already
+                auto it = udpAddressToGroupId.find(address);
+                if (it != udpAddressToGroupId.end())
+                {
+                    // Existing client
+                    std::string groupId = it->second;
+                    auto entry = udpGroupToAddress.find(groupId);
+                    std::cout << "Received message from client we have seen before in group [" << groupId << "] with [" << entry->second.size() << "] node(s)." << std::endl;
+                    for (kt::SocketAddress addr : entry->second)
+                    {
+                        if (std::memcmp(&addr, &address, sizeof(address)) != 0)
+                        {
+                            udpSocket.sendTo(message, addr, sizeof(addr));
+                        }
+                    }
+                }
+                else
+                {
+                    // This is a new client, check their first message content
+                    if (message.rfind(NEW_CLIENT_PREFIX_DEFAULT, 0) == 0)
+                    {
+                        std::string groupId = message.substr(NEW_CLIENT_PREFIX.size());
+                        std::cout << "New client requested to join group [" << groupId << "]" << std::endl;
+                        
+                        udpAddressToGroupId.insert({address, groupId});
+
+                        if (udpGroupToAddress.find(groupId) != udpGroupToAddress.end())
+                        {
+                            std::cout << "Group [" << groupId << "] does not exist, creating new group." << std::endl;
+                            
+                            std::vector<kt::SocketAddress> addresses;
+                            addresses.push_back(address);
+                            udpGroupToAddress.insert(std::make_pair(groupId, addresses));
+                        }
+                        else
+                        {
+                            std::cout << "Group [" << groupId << "] exists! Adding client to the existing group." << std::endl;
+                            udpGroupToAddress[groupId].push_back(address);
+                        }
+                    }
+                    else
+                    {
+                        // No-Op, a client we have no seen before and their first message is not to join a group
+                        std::cout << "Unseen client sent message that does not match new client prefix." << std::endl;
+                    }
+                }
+            }
+        }
+    }
+
+    bool udpGroupWithIdExists(std::string& groupId)
+    {
+        return udpGroupToAddress.find(groupId) != udpGroupToAddress.end();
+    }
+
+    void stopForwarder()
+    {
+        forwarderIsRunning = false;
     }
 }

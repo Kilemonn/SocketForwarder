@@ -37,15 +37,21 @@ namespace forwarder
         }
     }
 
-    std::optional<kt::UDPSocket> setUpUDPSocket()
+    std::optional<kt::UDPSocket> setUpUDPSocket(std::optional<std::string> defaultPort)
     {
         std::optional<std::string> udpPort = forwarder::getEnvironmentVariableValue(forwarder::UDP_PORT);
 
-        if (!udpPort.has_value())
+        if (!udpPort.has_value() && !defaultPort.has_value())
         {
             return std::nullopt;
         }
 
-        return std::make_optional(kt::UDPSocket());
+        std::string portAsString = udpPort.has_value() ? udpPort.value() : defaultPort.value();
+        const unsigned short portNumber = static_cast<unsigned short>(std::stoi(portAsString));
+
+        kt::UDPSocket udpSocket;
+        udpSocket.bind(portNumber);
+
+        return std::make_optional(udpSocket);
     }
 }
