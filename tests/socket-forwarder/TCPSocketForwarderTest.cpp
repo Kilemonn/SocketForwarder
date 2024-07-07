@@ -36,12 +36,26 @@ namespace forwarder
 		kt::TCPSocket client1("localhost", serverSocket.getPort());
 		ASSERT_TRUE(client1.send(NEW_CLIENT_PREFIX_DEFAULT + groupId));
 
-		std::this_thread::sleep_for(100ms);
+		std::this_thread::sleep_for(10ms);
 		ASSERT_TRUE(tcpGroupWithIdExists(groupId));
 
 		kt::TCPSocket client2("localhost", serverSocket.getPort());
 		ASSERT_TRUE(client2.send(NEW_CLIENT_PREFIX_DEFAULT + groupId));
-		
+		std::this_thread::sleep_for(20ms);
+
+		std::string toSend = "TCPSocketForwarderTest";
+		ASSERT_TRUE(client1.send(toSend));
+		std::this_thread::sleep_for(10ms);
+
+		std::string received = client2.receiveAmount(50);
+		ASSERT_EQ(toSend, received);
+
+		received += "12738651239132434";
+		ASSERT_TRUE(client2.send(received));
+		std::this_thread::sleep_for(10ms);
+
+		toSend = client1.receiveAmount(50);
+		ASSERT_EQ(toSend, received);
 
 		client1.close();
 		client2.close();

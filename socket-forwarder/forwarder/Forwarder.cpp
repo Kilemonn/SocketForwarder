@@ -54,8 +54,7 @@ namespace forwarder
                     else
                     {
                         std::cout << "GroupID " << groupId << " exists! Adding new connection to group." << std::endl;
-                        std::vector<kt::TCPSocket> sockets = tcpSessions.at(groupId);
-                        sockets.push_back(socket);
+                        tcpSessions[groupId].push_back(socket);
                     }
                 }
                 else
@@ -95,6 +94,7 @@ namespace forwarder
                     if (receiveSocket.ready())
                     {
                         std::string received = receiveSocket.receiveAmount(MAX_READ_IN_DEFAULT);
+                        std::cout << "Group [" << groupID << "] with [" << it->second.size() << "] nodes. Received content [" << received << "] from peer [" << i << "] forwarding to other peers..." << std::endl;
                         for (size_t j = 0; j < it->second.size(); j++)
                         {
                             if (j != i)
@@ -103,6 +103,10 @@ namespace forwarder
                                 if (!forwardToSocket.send(received))
                                 {
                                     std::cout << "Failed to forward message in group [" << groupID << "]." << std::endl;
+                                }
+                                else
+                                {
+                                    std::cout << "Group [" << groupID << "], successfully forwarded to peer [" << j << "]" << std::endl;
                                 }
                             }
                         }
