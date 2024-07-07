@@ -19,16 +19,19 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-set(SOURCE
-    socket-forwarder/TCPSocketForwarder.cpp
+set(FORWARDER_TEST_SOURCE
+    socket-forwarder/TCPSocketForwarderTest.cpp
 )
 
-add_executable(${PROJECT_NAME} ${SOURCE})
+# This is duplicated from the parent CMakeLists.txt, since these are needed to build the tests
+set(FORWARDER_SOURCE_FOR_TEST
+    ../socket-forwarder/environment/Environment.cpp
+    ../socket-forwarder/forwarder/Forwarder.cpp
+)
 
-ExternalProject_Get_Property(CppSocketLibrary SOURCE_DIR)
-set(SOCKET_LIB_SOURCE ${SOURCE_DIR})
+add_executable(${PROJECT_NAME} ${FORWARDER_TEST_SOURCE} ${FORWARDER_SOURCE_FOR_TEST})
 
-target_include_directories(SocketForwarder
+target_include_directories(SocketForwarderTests
     PUBLIC ${SOCKET_LIB_SOURCE}/src
 )
 
@@ -37,7 +40,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     gtest
     bluetooth
     pthread
-    PRIVATE ${SOCKET_LIB_SOURCE}/libCppSocketLibrary.a
+    PUBLIC ${SOCKET_LIB_SOURCE}/libCppSocketLibrary.a
 )
 
 # Enable unit testing

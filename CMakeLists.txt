@@ -19,11 +19,13 @@ ExternalProject_Add(CppSocketLibrary
 ExternalProject_Get_Property(CppSocketLibrary SOURCE_DIR)
 set(SOCKET_LIB_SOURCE ${SOURCE_DIR})
 
-add_executable(SocketForwarder
+set(FORWARDER_SOURCE
     socket-forwarder/main.cpp
     socket-forwarder/environment/Environment.cpp
     socket-forwarder/forwarder/Forwarder.cpp
 )
+
+add_executable(SocketForwarder ${FORWARDER_SOURCE})
 
 target_include_directories(SocketForwarder
     PUBLIC ${SOCKET_LIB_SOURCE}/src
