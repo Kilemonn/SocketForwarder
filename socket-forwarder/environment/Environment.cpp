@@ -1,13 +1,7 @@
-#pragma once
-
-#include <string>
-#include <optional>
+#include "Environment.h"
 
 namespace forwarder
 {
-    const std::string TCP_PORT = "TCP_PORT";
-    const std::string UDP_PORT = "UDP_PORT";
-
     std::optional<std::string> getEnvironmentVariableValue(std::string environmentVariableKey)
     {
         char *val = std::getenv(environmentVariableKey.c_str());

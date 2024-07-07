@@ -21,6 +21,8 @@ set(SOCKET_LIB_SOURCE ${SOURCE_DIR})
 
 add_executable(SocketForwarder
     socket-forwarder/main.cpp
+    socket-forwarder/environment/Environment.cpp
+    socket-forwarder/forwarder/Forwarder.cpp
 )
 
 target_include_directories(SocketForwarder
