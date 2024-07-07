@@ -16,8 +16,7 @@ namespace forwarder
     {
         std::size_t operator()(const kt::SocketAddress& k) const
         {
-            return std::hash<std::string>()(kt::getAddress(k).value()) ^
-                std::hash<std::string>()(std::to_string(kt::getPortNumber(k)));
+            return std::hash<std::string>()(kt::getAddress(k).value() + ":" + std::to_string(kt::getPortNumber(k)));
         }
     };
  
@@ -172,6 +171,8 @@ namespace forwarder
             {
                 std::string message = result.first.value();
                 kt::SocketAddress address = result.second.second;
+
+                std::cout << "Received message [" << message << "] from address: " << kt::getAddress(address).value() << ":" << kt::getPortNumber(address) << std::endl;
 
                 // Check if we have have received from this address already
                 auto it = udpAddressToGroupId.find(address);
