@@ -31,7 +31,10 @@ int main(int argc, char** argv)
     {        
         std::cout << "Running UDP forwarder on port [" << udpSocket.value().getListeningPort().value() << "]" << std::endl;
 
-        
+        std::thread udpRunningThread = forwarder::startUDPForwarder(udpSocket.value());
+
+        udpRunningThread.join();
+        udpSocket.value().close();
     }
     else
     {

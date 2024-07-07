@@ -32,10 +32,12 @@ namespace forwarder
     std::unordered_map<std::string, std::vector<kt::SocketAddress>> udpGroupToAddress;
     std::unordered_map<kt::SocketAddress, std::string, AddressHash, AddressEqual> udpAddressToGroupId;
 
-    bool forwarderIsRunning = true;
+    bool forwarderIsRunning;
 
     std::pair<std::thread, std::thread> startTCPForwarder(kt::ServerSocket& serverSocket)
     {
+        forwarderIsRunning = true;
+
         // Start one thread constantly receiving new connections and adding them to their correct group
         std::thread listeningThread(startTCPConnectionListener, serverSocket);
         
@@ -154,6 +156,8 @@ namespace forwarder
 
     std::thread startUDPForwarder(kt::UDPSocket& udpSocket)
     {
+        forwarderIsRunning = true;
+
         std::thread listeningThread(startUDPListener, udpSocket);
         return listeningThread;
     }
@@ -190,7 +194,7 @@ namespace forwarder
                     // This is a new client, check their first message content
                     if (message.rfind(NEW_CLIENT_PREFIX_DEFAULT, 0) == 0)
                     {
-                        std::string groupId = message.substr(NEW_CLIENT_PREFIX.size());
+                        std::string groupId = message.substr(NEW_CLIENT_PREFIX_DEFAULT.size());
                         std::cout << "New client requested to join group [" << groupId << "]" << std::endl;
                         
                         udpAddressToGroupId.insert({address, groupId});
