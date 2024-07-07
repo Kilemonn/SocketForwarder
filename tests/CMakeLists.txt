@@ -21,6 +21,7 @@ FetchContent_MakeAvailable(googletest)
 
 set(FORWARDER_TEST_SOURCE
     socket-forwarder/TCPSocketForwarderTest.cpp
+    socket-forwarder/UDPSocketForwarderTest.cpp
 )
 
 # This is duplicated from the parent CMakeLists.txt, since these are needed to build the tests

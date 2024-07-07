@@ -12,8 +12,25 @@ namespace forwarder
 {
     std::unordered_map<std::string, std::vector<kt::TCPSocket>> tcpSessions;
 
+    struct AddressHash
+    {
+        std::size_t operator()(const kt::SocketAddress& k) const
+        {
+            return std::hash<std::string>()(kt::getAddress(k).value()) ^
+                std::hash<std::string>()(std::to_string(kt::getPortNumber(k)));
+        }
+    };
+ 
+    struct AddressEqual
+    {
+        bool operator()(const kt::SocketAddress& lhs, const kt::SocketAddress& rhs) const
+        {
+            return std::memcmp(&lhs, &rhs, sizeof(lhs));
+        }
+    };
+
     std::unordered_map<std::string, std::vector<kt::SocketAddress>> udpGroupToAddress;
-    std::unordered_map<kt::SocketAddress, std::string> udpAddressToGroupId;
+    std::unordered_map<kt::SocketAddress, std::string, AddressHash, AddressEqual> udpAddressToGroupId;
 
     bool forwarderIsRunning = true;
 
