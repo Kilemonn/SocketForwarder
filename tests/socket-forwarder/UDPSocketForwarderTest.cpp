@@ -37,15 +37,17 @@ namespace forwarder
 
 		kt::UDPSocket client1;
         client1.bind();
-		ASSERT_TRUE(client1.sendTo("localhost", udpSocket.getListeningPort().value(), NEW_CLIENT_PREFIX_DEFAULT + std::to_string(client1.getListeningPort().value())).first);
-		std::this_thread::sleep_for(10ms);
+        std::pair<bool, std::pair<int, kt::SocketAddress>> sendResult = client1.sendTo("localhost", udpSocket.getListeningPort().value(), NEW_CLIENT_PREFIX_DEFAULT + std::to_string(client1.getListeningPort().value()));
+		std::cout << "Client 1 send result: " << sendResult.second.first << std::endl;
+        ASSERT_TRUE(sendResult.first);
+		std::this_thread::sleep_for(100ms);
 
 		ASSERT_EQ(1, udpGroupMemberCount());
 
 		kt::UDPSocket client2;
         client2.bind();
         ASSERT_TRUE(client2.sendTo("localhost", udpSocket.getListeningPort().value(), NEW_CLIENT_PREFIX_DEFAULT + std::to_string(client2.getListeningPort().value())).first);
-		std::this_thread::sleep_for(10ms);
+		std::this_thread::sleep_for(100ms);
 
         ASSERT_EQ(2, udpGroupMemberCount());
 
