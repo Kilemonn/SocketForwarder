@@ -35,6 +35,8 @@ namespace forwarder
 	TEST_F(TCPSocketForwarderTest, TestGeneralSendAndRecieve)
 	{
 		std::string groupId = "98235123";
+		ASSERT_FALSE(tcpGroupWithIdExists(groupId));
+		
 		kt::TCPSocket client1("localhost", serverSocket.getPort());
 		ASSERT_TRUE(client1.send(NEW_CLIENT_PREFIX_DEFAULT + groupId));
 		std::this_thread::sleep_for(10ms);
