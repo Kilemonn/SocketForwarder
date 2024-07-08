@@ -1,3 +1,13 @@
+# Build image with tag
+
+# MAKE SURE VERSION IN main.cpp MATCHES
+
+# docker build -t kilemon/socket-forwarder:0.1.0 .
+# docker tag kilemon/socket-forwarder:0.1.0 kilemon/socket-forwarder:latest
+#
+# Push image to remote
+# docker push kilemon/socket-forwarder:0.1.0
+
 FROM alpine:3.20.0 AS builder
 
 WORKDIR /builder
