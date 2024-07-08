@@ -27,12 +27,12 @@ namespace forwarder
         }
         catch(const kt::BindingException e)
         {
-            std::cout << "Failed to bind server socket on port: " << portNumber << ". " << e.what() << std::endl;
+            std::cout << "[TCP] - Failed to bind server socket on port: " << portNumber << ". " << e.what() << std::endl;
             return std::nullopt;
         }
         catch (const kt::SocketException e)
         {
-            std::cout << "Failed to create server socket: " << e.what() << std::endl;
+            std::cout << "[TCP] - Failed to create server socket: " << e.what() << std::endl;
             return std::nullopt;
         }
     }
@@ -49,9 +49,25 @@ namespace forwarder
         std::string portAsString = udpPort.has_value() ? udpPort.value() : defaultPort.value();
         const unsigned short portNumber = static_cast<unsigned short>(std::stoi(portAsString));
 
-        kt::UDPSocket udpSocket;
-        udpSocket.bind(portNumber);
-
-        return std::make_optional(udpSocket);
+        try
+        {
+            kt::UDPSocket udpSocket;
+            if (!udpSocket.bind(portNumber))
+            {
+                std::cout << "[UDP] - Failed to bind to provided port " << portNumber << "\n";
+                return std::nullopt;
+            }
+            return std::make_optional(udpSocket);
+        }
+        catch(const kt::BindingException e)
+        {
+            std::cout << "[UDP] - Failed to bind UDP socket on port: " << portNumber << ". " << e.what() << std::endl;
+            return std::nullopt;
+        }
+        catch (const kt::SocketException e)
+        {
+            std::cout << "[UDP] - Failed to create UDP socket: " << e.what() << std::endl;
+            return std::nullopt;
+        }
     }
 }

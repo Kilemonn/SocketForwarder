@@ -14,4 +14,6 @@ namespace forwarder
     const unsigned short MAX_READ_IN_DEFAULT = 10640;
 
     std::optional<std::string> getEnvironmentVariableValue(std::string);
+
+    std::string getEnvironmentVariableValueOrDefault(std::string, std::string);
 }

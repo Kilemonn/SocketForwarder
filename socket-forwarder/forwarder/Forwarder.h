@@ -10,13 +10,13 @@
 
 namespace forwarder
 {
-    std::pair<std::thread, std::thread> startTCPForwarder(kt::ServerSocket&);
-    void startTCPConnectionListener(kt::ServerSocket);
-    void startTCPDataForwarder();
+    std::pair<std::thread, std::thread> startTCPForwarder(kt::ServerSocket&, std::string, unsigned short);
+    void startTCPConnectionListener(kt::ServerSocket, std::string, unsigned short);
+    void startTCPDataForwarder(unsigned short);
     bool tcpGroupWithIdExists(std::string&);
 
-    std::thread startUDPForwarder(kt::UDPSocket&);
-    void startUDPListener(kt::UDPSocket);
+    std::thread startUDPForwarder(kt::UDPSocket&, std::string, unsigned short);
+    void startUDPListener(kt::UDPSocket, std::string, unsigned short);
     size_t udpGroupMemberCount();
     
     void stopForwarder();

@@ -10,7 +10,7 @@ project(${PROJECT_NAME} VERSION 1.0)
 
 ExternalProject_Add(CppSocketLibrary
     GIT_REPOSITORY https://github.com/Kilemonn/Cpp-SocketLibrary.git
-    GIT_TAG v0.4.1
+    GIT_TAG v0.4.2
     INSTALL_COMMAND ""
     UPDATE_DISCONNECTED FALSE
     BUILD_IN_SOURCE TRUE
