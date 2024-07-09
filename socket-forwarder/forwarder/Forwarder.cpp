@@ -261,7 +261,7 @@ namespace forwarder
                     std::string hostname = addr.substr(0, addr.find_first_of(':'));
                     std::string port = addr.substr(addr.find_first_of(':') + 1);
                     std::pair<bool, std::pair<int, kt::SocketAddress>> result = sendSocket.sendTo(hostname, std::atoi(port.c_str()), message);
-                    std::cout << "[UDP] - Forwarded to peer with address: " << hostname << " : " << port << ". With result " << result.second.first << "\n";
+                    std::cout << "[UDP] - Forwarded to peer with address: " << hostname << " : " << port << ". [" << result.second.first << "]\n";
                 }
                 std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
                 std::cout << "[UDP] - Took [" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms] to forward message to [" << udpKnownPeers.size() - 1 << "] peers.\n";
