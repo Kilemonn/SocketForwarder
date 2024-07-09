@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <thread>
 #include <chrono>
+#include <future>
 
 #include "../../socket-forwarder/environment/Environment.h"
 #include "../../socket-forwarder/forwarder/Forwarder.h"
@@ -13,19 +14,20 @@ namespace forwarder
 	{
 	protected:
         kt::UDPSocket udpSocket;
-		std::thread runningThread;
+		std::pair<std::thread, std::thread> runningThreads;
     protected:
         UDPSocketForwarderTest() : udpSocket() {}
         void SetUp() override
 		{
             udpSocket.bind();
-			runningThread = startUDPForwarder(udpSocket, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT);
+			runningThreads = startUDPForwarder(udpSocket, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT);
 		}
 
         void TearDown() override
         {
 			stopForwarder();
-			runningThread.join();
+			runningThreads.first.join();
+            runningThreads.second.join();
 
 			udpSocket.close();
         }
@@ -90,4 +92,109 @@ namespace forwarder
 		client1.close();
 		client2.close();
 	}
+
+    void receiveMessageAndAssertAsync(std::vector<kt::UDPSocket> sockets, size_t startIndex, unsigned long long endIndex, size_t messagesToReceive, std::string message)
+    {
+        ASSERT_GT(endIndex, startIndex);
+        size_t receivedMessageCount = 0;
+        for (size_t i = 0; i < messagesToReceive; i++)
+        {
+            for (size_t clientIndex = startIndex; clientIndex < endIndex; clientIndex++)
+            {
+                kt::UDPSocket socket = sockets[clientIndex];
+                if (socket.ready())
+                {
+                    std::pair<std::optional<std::string>, std::pair<int, kt::SocketAddress>> result = socket.receiveFrom(message.size() + std::to_string(i).size());
+                    ASSERT_NE(-1, result.second.first);
+                    ASSERT_NE(std::nullopt, result.first);
+                    ASSERT_TRUE(result.first.value().rfind(message, 0) == 0);
+                    
+                    receivedMessageCount++;
+                }
+            }
+        }
+
+        std::cout << "UDP - Test - Received messages [" << receivedMessageCount << "/" << messagesToReceive * (endIndex - startIndex) << "] [~" << (static_cast<double>(receivedMessageCount) / static_cast<double>((messagesToReceive * (endIndex - startIndex)))) * 100 << "%] from forwarder.\n";
+    }
+
+    /**
+     * I've seen some UDP level recv buffer limits that are stopping how much I can push this test.
+     * 
+     * The max I've been able to achieve in this test is receiving 55600 total messages using different permutations.
+     * 
+     * For now, I can get 100% rate with 200 clients and 278 messages (which equals the max limit 55600). 
+     * I believe the cause is how quickly the forwarder is returning messages back
+     * since this is all running from a single machine.
+     * 
+     * I can try to add socket recv buffer limit increases to the UDP sockets.
+     */
+    TEST_F(UDPSocketForwarderTest, TestNumerousClients)
+    {
+        const size_t amountOfClients = 200;
+		const size_t messagesToSend = 278;
+		std::string groupId = "TestNumerousClients-group";
+		std::vector<kt::UDPSocket> sockets;
+
+        ASSERT_EQ(0, udpGroupMemberCount());
+        for (size_t i = 0; i < amountOfClients; i++)
+		{
+			kt::UDPSocket socket;
+            ASSERT_TRUE(socket.bind());
+			ASSERT_TRUE(socket.sendTo("127.0.0.1", udpSocket.getListeningPort().value(), NEW_CLIENT_PREFIX_DEFAULT + std::to_string(socket.getListeningPort().value())).first);
+			sockets.push_back(socket);
+            std::this_thread::sleep_for(1ms);
+		}
+		std::this_thread::sleep_for(10ms);
+
+        ASSERT_EQ(amountOfClients, udpGroupMemberCount());
+
+		std::string message = "TestNumerousClients";
+        for (size_t i = 0; i < messagesToSend; i++)
+		{
+			kt::UDPSocket socket = sockets[0];
+			ASSERT_TRUE(socket.sendTo("127.0.0.1", udpSocket.getListeningPort().value(), message + std::to_string(i)).first);
+            std::this_thread::sleep_for(1ms);
+		}
+
+        std::this_thread::sleep_for(10ms);
+
+        size_t receivedMessageCount = 0;
+
+        // std::vector<std::future<void>> asyncs;
+        // size_t increment = 2;
+        // for (size_t split = 0; split < amountOfClients; split += increment)
+        // {
+        //     asyncs.push_back(std::move(std::async(std::launch::async, receiveMessageAndAssertAsync, sockets, split, split + increment, messagesToSend, message)));
+        // }
+		
+        for (size_t i = 0; i < messagesToSend; i++)
+		{
+			for (size_t clientIndex = 0; clientIndex < amountOfClients; clientIndex++)
+			{
+				kt::UDPSocket socket = sockets[clientIndex];
+                if (socket.ready())
+                {
+                    std::pair<std::optional<std::string>, std::pair<int, kt::SocketAddress>> result = socket.receiveFrom(message.size() + std::to_string(i).size());
+                    ASSERT_NE(-1, result.second.first);
+                    ASSERT_NE(std::nullopt, result.first);
+                    ASSERT_EQ(message + std::to_string(i), result.first.value());
+                    receivedMessageCount++;
+                }
+			}
+		}
+
+        // for (size_t i = 0; i < asyncs.size(); i++)
+        // {
+        //     asyncs[i].wait();
+        // }
+
+        for (size_t i = 0; i < amountOfClients; i++)
+        {
+            kt::UDPSocket socket = sockets[i];
+            socket.close();
+        }
+
+        std::cout << "UDP - Test - Received messages [" << receivedMessageCount << "/" << messagesToSend * amountOfClients << "] [~" << (static_cast<double>(receivedMessageCount) / static_cast<double>((messagesToSend * amountOfClients))) * 100 << "%] from forwarder.\n";
+        ASSERT_EQ(messagesToSend * amountOfClients, receivedMessageCount);
+    }
 }

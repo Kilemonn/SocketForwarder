@@ -4,6 +4,8 @@
 #include <string>
 #include <thread>
 
+#include <csignal>
+
 #include "sockets/Sockets.h"
 #include "environment/Environment.h"
 #include "forwarder/Forwarder.h"
@@ -20,11 +22,13 @@ int main(int argc, char** argv)
     std::cout << "Using new client prefix: [" << newClientPrefix << "].\n";
     std::cout << "Using max read in size: [" << maxReadInSize << "]." << std::endl;
 
+    signal(SIGPIPE, SIG_IGN);
+
     std::optional<kt::ServerSocket> serverSocket = forwarder::setUpTcpServerSocket(argc > 1 ? std::make_optional(std::string(argv[1])) : std::nullopt);
     std::optional<kt::UDPSocket> udpSocket = forwarder::setUpUDPSocket(argc > 2 ? std::make_optional(std::string(argv[2])) : std::nullopt);
 
     std::optional<std::pair<std::thread, std::thread>> tcpRunningThreads = std::nullopt;
-    std::optional<std::thread> udpRunningThread = std::nullopt;
+    std::optional<std::pair<std::thread, std::thread>> udpRunningThreads = std::nullopt;
 
     if (serverSocket.has_value())
     {
@@ -40,7 +44,7 @@ int main(int argc, char** argv)
     {        
         std::cout << "[UDP] - Running UDP forwarder on port [" << udpSocket.value().getListeningPort().value() << "]" << std::endl;
 
-        udpRunningThread = forwarder::startUDPForwarder(udpSocket.value(), newClientPrefix, maxReadInSize);
+        udpRunningThreads = forwarder::startUDPForwarder(udpSocket.value(), newClientPrefix, maxReadInSize);
     }
     else
     {
@@ -53,8 +57,9 @@ int main(int argc, char** argv)
         tcpRunningThreads.value().second.join();
     }
 
-    if (udpRunningThread.has_value())
+    if (udpRunningThreads.has_value())
     {
-        udpRunningThread.value().join();
+        udpRunningThreads.value().first.join();
+        udpRunningThreads.value().second.join();
     }
 }
