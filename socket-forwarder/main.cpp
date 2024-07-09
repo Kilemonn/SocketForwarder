@@ -14,6 +14,8 @@ const std::string VERSION = "0.1.0";
 
 int main(int argc, char** argv)
 {
+    // TODO: Add env arg to provide a list of UDP clients that are already part of the UDP group on start up
+
     std::cout << "Running SocketForwarder v" << VERSION << std::endl;
 
     std::string newClientPrefix = forwarder::getEnvironmentVariableValueOrDefault(forwarder::NEW_CLIENT_PREFIX, forwarder::NEW_CLIENT_PREFIX_DEFAULT);

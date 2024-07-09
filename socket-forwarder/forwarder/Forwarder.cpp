@@ -32,8 +32,7 @@ namespace forwarder
     };
 
     // For UDP since we don't know who is sending specific messages from, ALL UDP connections will be treated as the same group
-    // std::unordered_set<kt::SocketAddress, AddressHash, AddressEqual> udpKnownPeers;
-    std::unordered_set<std::string> udpKnownPeers;
+    std::unordered_set<kt::SocketAddress, AddressHash, AddressEqual> udpKnownPeers;
     std::queue<std::string> udpMessageQueue;
 
     bool forwarderIsRunning;
@@ -217,18 +216,10 @@ namespace forwarder
                 if (message.rfind(newClientPrefix, 0) == 0)
                 {
                     std::string recievingPort = message.substr(newClientPrefix.size());
-                    std::cout << "[UDP] - New client requested to joined UDP group with port [" << recievingPort << "]\n";
+                    std::cout << "[UDP] - New client requested to joined UDP group from address [" << kt::getAddress(address).value() << ":" << kt::getPortNumber(address) << "] with request reply port [" << recievingPort << "]\n";
 
                     address.ipv4.sin_port = htons(std::atoi(recievingPort.c_str()));
-                    addrinfo hints{};
-                    hints.ai_family = AF_UNSPEC;
-                    hints.ai_socktype = SOCK_DGRAM;
-                    hints.ai_protocol = IPPROTO_UDP;
-                    kt::SocketAddress resolvedAddress = kt::resolveToAddresses(kt::getAddress(address).value(), std::atoi(recievingPort.c_str()), hints).first[0];
-
-                    std::cout << "[UDP] - Resolved address with port to: " << kt::getAddress(resolvedAddress).value() << ":" << kt::getPortNumber(resolvedAddress) << "\n";
-                    // udpKnownPeers.emplace(resolvedAddress);
-                    udpKnownPeers.emplace(kt::getAddress(resolvedAddress).value() + ":" + std::to_string(kt::getPortNumber(resolvedAddress)));
+                    udpKnownPeers.emplace(address);
                 }
                 else
                 {
@@ -252,16 +243,10 @@ namespace forwarder
                 std::cout << "[UDP] - Received message [" << message << "] forwarding to peers.\n";
                     
                 std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-                // for (kt::SocketAddress addr : udpKnownPeers)
-                for (std::string addr : udpKnownPeers)
+                for (kt::SocketAddress addr : udpKnownPeers)
                 {
-                    // std::pair<bool, int> result = sendSocket.sendTo(message, addr, sizeof(addr));
-                    // std::cout << "Forwarded to peer with address: " << kt::getAddress(addr).value() << ":" << kt::getPortNumber(addr) << ". With result " << result.second << "\n";
-                
-                    std::string hostname = addr.substr(0, addr.find_first_of(':'));
-                    std::string port = addr.substr(addr.find_first_of(':') + 1);
-                    std::pair<bool, std::pair<int, kt::SocketAddress>> result = sendSocket.sendTo(hostname, std::atoi(port.c_str()), message);
-                    std::cout << "[UDP] - Forwarded to peer with address: " << hostname << " : " << port << ". [" << result.second.first << "]\n";
+                    std::pair<bool, int> result = sendSocket.sendTo(message, addr);
+                    std::cout << "Forwarded to peer with address: " << kt::getAddress(addr).value() << ":" << kt::getPortNumber(addr) << ". With result " << result.second << "\n";
                 }
                 std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
                 std::cout << "[UDP] - Took [" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms] to forward message to [" << udpKnownPeers.size() - 1 << "] peers.\n";
