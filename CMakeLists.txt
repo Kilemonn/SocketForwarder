@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(PROJECT_NAME SocketForwarder)
 
-project(${PROJECT_NAME} VERSION 0.1.0)
+project(${PROJECT_NAME} VERSION 0.1.1)
 
 ExternalProject_Add(CppSocketLibrary
     GIT_REPOSITORY https://github.com/Kilemonn/Cpp-SocketLibrary.git
