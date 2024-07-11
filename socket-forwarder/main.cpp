@@ -10,7 +10,7 @@
 #include "environment/Environment.h"
 #include "forwarder/Forwarder.h"
 
-const std::string VERSION = "0.1.0";
+const std::string VERSION = "0.1.1";
 
 int main(int argc, char** argv)
 {
