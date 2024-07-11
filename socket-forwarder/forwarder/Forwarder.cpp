@@ -134,9 +134,10 @@ namespace forwarder
                                 }
                                 else
                                 {
-                                    if (forwardToSocket.send(received))
+                                    if (forwardToSocket.send(received).first)
                                     {
-                                        std::cout << "[TCP] - Group [" << groupID << "], successfully forwarded to peer [" << j << "]\n";
+                                        // TODO For debug
+                                        // std::cout << "[TCP] - Group [" << groupID << "], successfully forwarded to peer [" << j << "]\n";
                                     }
                                     else
                                     {
@@ -204,7 +205,7 @@ namespace forwarder
             
             if (result.second.first > 0 && result.first.has_value())
             {
-                // Add as "DEBUG" flag
+                // TODO Add as "DEBUG" flag
                 // std::cout << "[UDP] - Read in successful with result " << result.second.first << " data: " << (result.first.has_value() ? result.first.value() : "") << "\n";
 
                 std::string message = result.first.value();
@@ -240,16 +241,20 @@ namespace forwarder
             {
                 std::string message = udpMessageQueue.front();
                 udpMessageQueue.pop();
-                std::cout << "[UDP] - Received message [" << message << "] forwarding to peers.\n";
+                
+                // TODO Debug
+                // std::cout << "[UDP] - Received message [" << message << "] forwarding to peers.\n";
                     
                 std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
                 for (kt::SocketAddress addr : udpKnownPeers)
                 {
                     std::pair<bool, int> result = sendSocket.sendTo(message, addr);
-                    std::cout << "Forwarded to peer with address: " << kt::getAddress(addr).value() << ":" << kt::getPortNumber(addr) << ". With result " << result.second << "\n";
+                    // TODO: For debug
+                    // std::cout << "Forwarded to peer with address: " << kt::getAddress(addr).value() << ":" << kt::getPortNumber(addr) << ". With result " << result.second << "\n";
                 }
+                std::cout << "[UDP] - Forwarded to [" << udpKnownPeers.size() << "] peer(s).\n";
                 std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-                std::cout << "[UDP] - Took [" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms] to forward message to [" << udpKnownPeers.size() - 1 << "] peers.\n";
+                std::cout << "[UDP] - Took [" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms] to forward message to [" << udpKnownPeers.size() << "] peers.\n";
             }
             else
             {
