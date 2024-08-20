@@ -20,7 +20,6 @@ namespace forwarder
         TCPSocketForwarderTest() : serverSocket(kt::SocketType::Wifi) {}
         void SetUp() override
 		{
-			signal(SIGPIPE, SIG_IGN);
 			runningThreads = startTCPForwarder(serverSocket, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT);
 		}
 
@@ -127,9 +126,7 @@ namespace forwarder
 		recieved = client2.receiveAmount(100);
 		ASSERT_EQ(content + content, recieved);
 
-		// TODO: We need a way to force the server to detected a closed connection, this assertion should really be 2
-		// ASSERT_EQ(2, tcpGroupMemberCount(groupId));
-		ASSERT_EQ(3, tcpGroupMemberCount(groupId));
+		ASSERT_EQ(2, tcpGroupMemberCount(groupId));
 
 		client1.close();
 		client2.close();

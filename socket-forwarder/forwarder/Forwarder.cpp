@@ -134,14 +134,15 @@ namespace forwarder
                                 }
                                 else
                                 {
-                                    if (forwardToSocket.send(received).first)
+                                    if (forwardToSocket.send(received, MSG_NOSIGNAL).first)
                                     {
                                         // TODO For debug
                                         // std::cout << "[TCP] - Group [" << groupID << "], successfully forwarded to peer [" << j << "]\n";
                                     }
                                     else
                                     {
-                                        std::cout << "[TCP] - Group [" << groupID << "], failed to forward message in group.\n";
+                                        std::cout << "[TCP] - Group [" << groupID << "], failed to seend to peer [" << j << "], removing from group.\n";
+                                        toRemove.push_back(j);
                                     }
                                 }
                             }

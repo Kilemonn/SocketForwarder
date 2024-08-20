@@ -10,7 +10,7 @@
 #include "environment/Environment.h"
 #include "forwarder/Forwarder.h"
 
-const std::string VERSION = "0.1.1";
+const std::string VERSION = "0.1.2";
 
 int main(int argc, char** argv)
 {
@@ -23,8 +23,6 @@ int main(int argc, char** argv)
 
     std::cout << "Using new client prefix: [" << newClientPrefix << "].\n";
     std::cout << "Using max read in size: [" << maxReadInSize << "]." << std::endl;
-
-    signal(SIGPIPE, SIG_IGN);
 
     std::optional<kt::ServerSocket> serverSocket = forwarder::setUpTcpServerSocket(argc > 1 ? std::make_optional(std::string(argv[1])) : std::nullopt);
     std::optional<kt::UDPSocket> udpSocket = forwarder::setUpUDPSocket(argc > 2 ? std::make_optional(std::string(argv[2])) : std::nullopt);
