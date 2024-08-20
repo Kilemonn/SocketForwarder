@@ -141,7 +141,7 @@ namespace forwarder
                                     }
                                     else
                                     {
-                                        std::cout << "[TCP] - Group [" << groupID << "], failed to seend to peer [" << j << "], removing from group.\n";
+                                        std::cout << "[TCP] - Group [" << groupID << "], failed to send to peer [" << j << "], removing from group.\n";
                                         toRemove.push_back(j);
                                     }
                                 }
