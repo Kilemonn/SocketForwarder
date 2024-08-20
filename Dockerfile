@@ -8,7 +8,7 @@
 # Push image to remote
 # docker push kilemon/socket-forwarder:0.1.0
 
-FROM alpine:3.20.0 AS builder
+FROM alpine:3.20.2 AS builder
 
 WORKDIR /builder
 
@@ -30,7 +30,7 @@ RUN ["make", "all"]
 WORKDIR /builder/build/tests
 RUN ["./SocketForwarderTests"]
 
-FROM alpine:3.20.0 AS runner
+FROM alpine:3.20.2 AS runner
 
 WORKDIR /socket-forwarder
 
