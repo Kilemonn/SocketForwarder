@@ -12,7 +12,7 @@ FROM alpine:3.20.2 AS builder
 
 WORKDIR /builder
 
-RUN apk update && apk upgrade && apk add g++ cmake make git bluez-dev glib-dev bluez
+RUN apk update && apk upgrade && apk add g++ cmake make git bluez-dev glib-dev bluez gdb
 
 COPY ./socket-forwarder ./socket-forwarder
 COPY ./tests ./tests

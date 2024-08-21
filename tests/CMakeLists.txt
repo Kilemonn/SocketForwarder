@@ -50,4 +50,9 @@ enable_testing()
 
 add_test(${PROJECT_NAME} ${PROJECT_NAME})
 
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS ${PROJECT_NAME})
+# Add -g flag for gdb debugging for tests
+target_compile_options(${PROJECT_NAME} PRIVATE -g)
+target_compile_options(${PROJECT_NAME} PRIVATE -O0)
+target_link_options(${PROJECT_NAME} PRIVATE -g)
+
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose DEPENDS ${PROJECT_NAME})

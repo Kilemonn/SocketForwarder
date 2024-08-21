@@ -10,10 +10,13 @@
 #include <chrono>
 #include <vector>
 #include <queue>
+#include <mutex>
 
 namespace forwarder
 {
+    std::mutex tcpMapMutex;
     std::unordered_map<std::string, std::vector<kt::TCPSocket>> tcpSessions;
+    std::unordered_map<std::string, std::unique_ptr<std::mutex>> tcpMutexes;
 
     struct AddressHash
     {
@@ -65,18 +68,22 @@ namespace forwarder
 
                 if (firstMessage.rfind(newClientPrefix, 0) == 0)
                 {
-                    std::string groupId = firstMessage.substr(newClientPrefix.size());
+                    const std::string groupId = firstMessage.substr(newClientPrefix.size());
                     if (tcpSessions.find(groupId) == tcpSessions.end())
                     {
                         std::cout << "[TCP] - Group [" << groupId << "] does not exist, creating new group.\n";
                         // No existing sessions, create new
                         std::vector<kt::TCPSocket> sockets;
                         sockets.push_back(socket);
+
+                        std::scoped_lock lock(tcpMapMutex);
+                        tcpMutexes.insert(std::make_pair(groupId, std::make_unique<std::mutex>()));
                         tcpSessions.insert(std::make_pair(groupId, sockets));
                     }
                     else
                     {
-                        std::cout << "[TCP] - Group [" << groupId << "] exists! Adding new connection to group.\n";
+                        std::cout << "[TCP] - Group [" << groupId << "] exists! Adding new connection to group. Group size before adding new connection [" << tcpSessions[groupId].size() << "]\n";
+                        std::scoped_lock lock(*tcpMutexes[groupId]);
                         tcpSessions[groupId].push_back(socket);
                     }
                 }
@@ -122,6 +129,8 @@ namespace forwarder
                         }
                         std::cout << "[TCP] - Group [" << groupID << "] with [" << it->second.size() << "] nodes. Received content [" << received << "] from peer [" << i << "] forwarding to other peers...\n";
                         std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+
+                        std::scoped_lock lock(*tcpMutexes[groupID]);
                         for (size_t j = 0; j < it->second.size(); j++)
                         {
                             if (j != i)
@@ -149,16 +158,17 @@ namespace forwarder
                         }
                         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
                         std::cout << "[TCP] - Group [" << groupID << "] took [" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms] to forward message to [" << it->second.size() - 1 << "] peers.\n";
-
-                        for (size_t index : toRemove)
-                        {
-                            std::vector<kt::TCPSocket>::iterator socketPosition = std::next(it->second.begin(), index);
-                            socketPosition->close();
-                            it->second.erase(socketPosition);
-                        }
-                        toRemove.clear();
                     }
                 }
+
+                std::scoped_lock lock(*tcpMutexes[groupID]);
+                for (size_t index : toRemove)
+                {
+                    std::vector<kt::TCPSocket>::iterator socketPosition = std::next(it->second.begin(), index);
+                    socketPosition->close();
+                    it->second.erase(socketPosition);
+                }
+                toRemove.clear();
             }
         }
 
