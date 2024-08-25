@@ -10,7 +10,8 @@
 #include "environment/Environment.h"
 #include "forwarder/Forwarder.h"
 
-const std::string VERSION = "0.1.2";
+// Make sure version of built image matches
+const std::string VERSION = "0.2.0";
 
 int main(int argc, char** argv)
 {
