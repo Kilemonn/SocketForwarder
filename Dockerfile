@@ -13,7 +13,9 @@ FROM ubuntu:24.10 AS builder
 
 WORKDIR /builder
 
+# For alpine linux
 # RUN apk update && apk upgrade && apk add g++ cmake make git bluez-dev glib-dev bluez gdb
+
 RUN apt update && apt install g++ cmake make git libbluetooth-dev libglib2.0-dev bluez gdb -y
 
 COPY ./socket-forwarder ./socket-forwarder
@@ -34,8 +36,8 @@ FROM ubuntu:24.10 AS runner
 
 WORKDIR /socket-forwarder
 
+# For alpine linux
 # RUN apk update && apk upgrade && apk add libstdc++
-RUN apt update && apt upgrade -y
 
 COPY --from=builder /builder/build/SocketForwarder /socket-forwarder/SocketForwarder
 
