@@ -11,7 +11,7 @@
 #include "forwarder/Forwarder.h"
 
 // Make sure version of built image matches
-const std::string VERSION = "0.2.0";
+const std::string VERSION = "0.2.1";
 
 int main(int argc, char** argv)
 {

@@ -22,7 +22,7 @@ namespace forwarder
 
         try
         {
-            kt::ServerSocket serverSocket(kt::SocketType::Wifi, portNumber);
+            kt::ServerSocket serverSocket(kt::SocketType::Wifi, std::string("0.0.0.0"), portNumber);
             return std::make_optional(serverSocket);
         }
         catch(const kt::BindingException e)

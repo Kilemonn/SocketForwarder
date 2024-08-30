@@ -108,7 +108,7 @@ namespace forwarder
 		ASSERT_EQ(3, tcpGroupMemberCount(groupId));
 
 		client3.close();
-		std::this_thread::sleep_for(10ms);
+		std::this_thread::sleep_for(50ms);
 
 		std::string content = "TestClientDisconnects-message";
 		ASSERT_TRUE(client1.send(content).first);
