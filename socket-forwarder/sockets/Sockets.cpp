@@ -52,7 +52,7 @@ namespace forwarder
         try
         {
             kt::UDPSocket udpSocket;
-            if (!udpSocket.bind(portNumber).first)
+            if (!udpSocket.bind(std::string("0.0.0.0"), portNumber).first)
             {
                 std::cout << "[UDP] - Failed to bind to provided port " << portNumber << "\n";
                 return std::nullopt;

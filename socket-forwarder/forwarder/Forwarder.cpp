@@ -202,30 +202,33 @@ namespace forwarder
         std::cout << "[UDP] - Starting UDP forwarder connection listener..." << std::endl;
         while (forwarderIsRunning)
         {
-            std::pair<std::optional<std::string>, std::pair<int, kt::SocketAddress>> result = udpSocket.receiveFrom(maxReadInSize);
-            
-            if (result.second.first > 0 && result.first.has_value())
+            if (udpSocket.ready())
             {
-                // TODO Add as "DEBUG" flag
-                // std::cout << "[UDP] - Read in successful with result " << result.second.first << " data: " << (result.first.has_value() ? result.first.value() : "") << "\n";
-
-                std::string message = result.first.value();
-                kt::SocketAddress address = result.second.second;
-
-                std::cout << "[UDP] - Received message [" << message << "] from address: " << kt::getAddress(address).value() << ":" << kt::getPortNumber(address) << "\n";
-
-                // This is a new client, check their first message content
-                if (message.rfind(newClientPrefix, 0) == 0)
+                std::pair<std::optional<std::string>, std::pair<int, kt::SocketAddress>> result = udpSocket.receiveFrom(maxReadInSize);
+            
+                if (result.second.first > 0 && result.first.has_value())
                 {
-                    std::string recievingPort = message.substr(newClientPrefix.size());
-                    std::cout << "[UDP] - New client requested to joined UDP group from address [" << kt::getAddress(address).value() << ":" << kt::getPortNumber(address) << "] with request reply port [" << recievingPort << "]\n";
+                    // TODO Add as "DEBUG" flag
+                    // std::cout << "[UDP] - Read in successful with result " << result.second.first << " data: " << (result.first.has_value() ? result.first.value() : "") << "\n";
 
-                    address.ipv4.sin_port = htons(std::atoi(recievingPort.c_str()));
-                    udpKnownPeers.emplace(address);
-                }
-                else
-                {
-                    udpMessageQueue.push(message);
+                    std::string message = result.first.value();
+                    kt::SocketAddress address = result.second.second;
+
+                    std::cout << "[UDP] - Received message [" << message << "] from address: " << kt::getAddress(address).value() << ":" << kt::getPortNumber(address) << "\n";
+
+                    // This is a new client, check their first message content
+                    if (message.rfind(newClientPrefix, 0) == 0)
+                    {
+                        std::string recievingPort = message.substr(newClientPrefix.size());
+                        std::cout << "[UDP] - New client requested to joined UDP group from address [" << kt::getAddress(address).value() << ":" << kt::getPortNumber(address) << "] with request reply port [" << recievingPort << "]\n";
+
+                        address.ipv4.sin_port = htons(std::atoi(recievingPort.c_str()));
+                        udpKnownPeers.emplace(address);
+                    }
+                    else
+                    {
+                        udpMessageQueue.push(message);
+                    }
                 }
             }
         }
