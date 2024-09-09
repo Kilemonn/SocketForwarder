@@ -37,7 +37,7 @@ namespace forwarder
 
     bool forwarderIsRunning;
 
-    std::pair<std::thread, std::thread> startTCPForwarder(kt::ServerSocket& serverSocket, const std::string newClientPrefix, const unsigned short maxReadInSize, const bool debug)
+    std::pair<std::thread, std::thread> startTCPForwarder(kt::ServerSocket& serverSocket, std::string newClientPrefix, unsigned short maxReadInSize, bool debug)
     {
         forwarderIsRunning = true;
 
@@ -51,7 +51,7 @@ namespace forwarder
         return std::make_pair(std::move(listeningThread), std::move(dataForwarderThread));
     }
 
-    void startTCPConnectionListener(kt::ServerSocket serverSocket, const std::string newClientPrefix, const unsigned short maxReadInSize, const bool debug)
+    void startTCPConnectionListener(kt::ServerSocket serverSocket, std::string newClientPrefix, unsigned short maxReadInSize, bool debug)
     {
         std::cout << "[TCP] - Starting TCP connection listener..." << std::endl;
         while(forwarderIsRunning)
@@ -113,7 +113,7 @@ namespace forwarder
         serverSocket.close();
     }
 
-    void startTCPDataForwarder(const unsigned short maxReadInSize, const bool debug)
+    void startTCPDataForwarder(unsigned short maxReadInSize, bool debug)
     {
         std::cout << "[TCP] - Starting TCP forwarder listener..." << std::endl;
         while (forwarderIsRunning)
@@ -215,7 +215,7 @@ namespace forwarder
         return 0;
     }
 
-    std::pair<std::thread, std::thread> startUDPForwarder(kt::UDPSocket& udpSocket, const std::string newClientPrefix, const unsigned short maxReadInSize, const bool debug)
+    std::pair<std::thread, std::thread> startUDPForwarder(kt::UDPSocket& udpSocket, std::string newClientPrefix, unsigned short maxReadInSize, bool debug)
     {
         forwarderIsRunning = true;
 
@@ -224,7 +224,7 @@ namespace forwarder
         return std::make_pair(std::move(listeningThread), std::move(responderThread));
     }
 
-    void startUDPListener(kt::UDPSocket udpSocket, const std::string newClientPrefix, const unsigned short maxReadInSize, const bool debug)
+    void startUDPListener(kt::UDPSocket udpSocket, std::string newClientPrefix, unsigned short maxReadInSize, bool debug)
     {
         std::cout << "[UDP] - Starting UDP forwarder connection listener..." << std::endl;
         while (forwarderIsRunning)
@@ -271,7 +271,7 @@ namespace forwarder
         udpSocket.close();
     }
 
-    void startUDPDataForwarder(const bool debug)
+    void startUDPDataForwarder(bool debug)
     {
         std::cout << "[UDP] - Starting UDP data forwarder listener..." << std::endl;
         kt::UDPSocket sendSocket;
