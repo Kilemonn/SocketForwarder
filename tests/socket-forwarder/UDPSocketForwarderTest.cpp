@@ -20,7 +20,7 @@ namespace forwarder
         void SetUp() override
 		{
             udpSocket.bind();
-			runningThreads = startUDPForwarder(udpSocket, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT);
+			runningThreads = startUDPForwarder(udpSocket, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT, true);
 		}
 
         void TearDown() override

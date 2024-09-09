@@ -20,7 +20,7 @@ namespace forwarder
         TCPSocketForwarderTest() : serverSocket(kt::SocketType::Wifi) {}
         void SetUp() override
 		{
-			runningThreads = startTCPForwarder(serverSocket, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT);
+			runningThreads = startTCPForwarder(serverSocket, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT, true);
 		}
 
         void TearDown() override
