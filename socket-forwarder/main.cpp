@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <string>
 #include <thread>
+#include <algorithm>
 
 #include <csignal>
 
@@ -19,11 +20,13 @@ int main(int argc, char** argv)
 
     std::cout << "Running SocketForwarder v" << VERSION << std::endl;
 
-    std::string newClientPrefix = forwarder::getEnvironmentVariableValueOrDefault(forwarder::NEW_CLIENT_PREFIX, forwarder::NEW_CLIENT_PREFIX_DEFAULT);
-    unsigned short maxReadInSize = std::atoi(forwarder::getEnvironmentVariableValueOrDefault(forwarder::MAX_READ_IN_SIZE, std::to_string(forwarder::MAX_READ_IN_DEFAULT)).c_str());
+    const std::string newClientPrefix = forwarder::getEnvironmentVariableValueOrDefault(forwarder::NEW_CLIENT_PREFIX, forwarder::NEW_CLIENT_PREFIX_DEFAULT);
+    const unsigned short maxReadInSize = std::atoi(forwarder::getEnvironmentVariableValueOrDefault(forwarder::MAX_READ_IN_SIZE, std::to_string(forwarder::MAX_READ_IN_DEFAULT)).c_str());
+    const bool debug = forwarder::getEnvironmentVariableValue(forwarder::DEBUG).has_value();
 
-    std::cout << "Using new client prefix: [" << newClientPrefix << "].\n";
-    std::cout << "Using max read in size: [" << maxReadInSize << "]." << std::endl;
+    std::cout << "Using new client prefix: [" << newClientPrefix << "].\n" 
+        << "Using max read in size: [" << maxReadInSize << "].\n"
+        << "DEBUG flag set to [" << debug << "]." << std::endl;
 
     std::optional<kt::ServerSocket> serverSocket = forwarder::setUpTcpServerSocket(argc > 1 ? std::make_optional(std::string(argv[1])) : std::nullopt);
     std::optional<kt::UDPSocket> udpSocket = forwarder::setUpUDPSocket(argc > 2 ? std::make_optional(std::string(argv[2])) : std::nullopt);
@@ -34,7 +37,7 @@ int main(int argc, char** argv)
     if (serverSocket.has_value())
     {
         std::cout << "[TCP] - Running TCP forwarder on port [" << serverSocket.value().getPort() << "]" << std::endl;
-        tcpRunningThreads = forwarder::startTCPForwarder(serverSocket.value(), newClientPrefix, maxReadInSize);
+        tcpRunningThreads = forwarder::startTCPForwarder(serverSocket.value(), newClientPrefix, maxReadInSize, debug);
     }
     else
     {
@@ -45,7 +48,7 @@ int main(int argc, char** argv)
     {        
         std::cout << "[UDP] - Running UDP forwarder on port [" << udpSocket.value().getListeningPort().value() << "]" << std::endl;
 
-        udpRunningThreads = forwarder::startUDPForwarder(udpSocket.value(), newClientPrefix, maxReadInSize);
+        udpRunningThreads = forwarder::startUDPForwarder(udpSocket.value(), newClientPrefix, maxReadInSize, debug);
     }
     else
     {
