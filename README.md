@@ -28,19 +28,19 @@ Example command:
 Running the container allows you to customise the forwarder in specific ways as per the environment variables that you provide on startup to the application.
 The environment variables that can be provided are as follows:
 
-#### TCP_PORT
+#### socketforwarder.tcp_port
 
 *If not provided the TCP forwarder will not run.*
 
 This is the port that the TCP forwarder will listen on for new connections to join a forwarder group.
 
-#### UDP_PORT
+#### socketforwarder.udp_port
 
 *If not provided the UDP forwarder will not run.*
 
 This is the port that the UDP forwarder will listen on for all messages.
 
-#### NEW_CLIENT_PREFIX
+#### socketforwarder.new_client_prefix
 
 *If not provided this will default to **"SOCKETFORWARDER-NEW:"**.*
 
@@ -57,8 +57,14 @@ For UDP:
 E.g.
 > `SOCKETFORWARDER-NEW:44567`
 
-#### MAX_READ_IN_SIZE
+#### socketforwarder.max_read_in_size
 
 *If not provided this will default to **10240**.*
 
 This will be the maximum read size for all TCP and UDP socket read operations.
+
+#### socketforwarder.debug
+
+*If not provided this is 'false' or disabled by default.*
+
+This will enable more logging of messages received, timing taken to forward and the amount of clients in each forwarder group.
