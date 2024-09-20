@@ -6,6 +6,7 @@
 namespace forwarder
 {
     const std::string SOCKET_FORWARDER_PREFIX = "socketforwarder.";
+    const std::string HOST_ADDRESS = SOCKET_FORWARDER_PREFIX + "host_address";
     const std::string TCP_PORT = SOCKET_FORWARDER_PREFIX + "tcp_port";
     const std::string UDP_PORT = SOCKET_FORWARDER_PREFIX + "udp_port";
     const std::string NEW_CLIENT_PREFIX = SOCKET_FORWARDER_PREFIX + "new_client_prefix";

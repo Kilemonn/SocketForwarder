@@ -80,3 +80,11 @@ This will be the maximum read size for all TCP and UDP socket read operations.
 This will enable more logging of messages received, timing taken to forward and the amount of clients in each forwarder group.
 
 ---
+
+#### socketforwarder.host_address
+
+*If not provided the value "0.0.0.0" is used.*
+
+This will be the address that the application binds to for both TCP and UDP.
+
+---
