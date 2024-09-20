@@ -42,6 +42,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     gtest
     bluetooth
     pthread
+    uuid
     PUBLIC ${SOCKET_LIB_SOURCE}/libCppSocketLibrary.a
 )
 

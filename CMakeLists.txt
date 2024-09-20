@@ -36,6 +36,7 @@ target_link_libraries(SocketForwarder
     PUBLIC ${SOCKET_LIB_SOURCE}/libCppSocketLibrary.a
     pthread
     bluetooth
+    uuid
 )
 
 add_subdirectory(tests)

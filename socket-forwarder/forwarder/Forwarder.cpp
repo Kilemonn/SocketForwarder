@@ -11,6 +11,8 @@
 #include <vector>
 #include <queue>
 
+#include <uuid/uuid.h>
+
 namespace forwarder
 {
     std::unordered_map<std::string, std::vector<kt::TCPSocket>> tcpSessions;
@@ -62,7 +64,7 @@ namespace forwarder
                 std::string firstMessage = socket.receiveAmount(maxReadInSize);
 
                 std::optional<std::string> address = kt::getAddress(socket.getSocketAddress());
-                std::string addressString = (address ? address.value() : "") + std::to_string(kt::getPortNumber(socket.getSocketAddress()));
+                std::string addressString = (address ? address.value() : "") + ":" + std::to_string(kt::getPortNumber(socket.getSocketAddress()));
                 std::cout << "[TCP] - Accepted new connection from [" << addressString << "] and read message of size [" << firstMessage.size() << "].\n";
 
                 if (debug)
@@ -133,9 +135,10 @@ namespace forwarder
                             continue;
                         }
                         
+                        std::string uuidString = getNewUUID();
                         if (debug)
                         {
-                            std::cout << "[TCP] - Group [" << groupID << "] with [" << it->second.size() << "] nodes. Received content [" << received << "] from peer [" << i << "] forwarding to other peers...\n";
+                            std::cout << "[TCP - " + uuidString + "] - Group [" << groupID << "] with [" << it->second.size() << "] nodes. Received content [" << received << "] from peer [" << i << "] forwarding to other peers...\n";
                         }
                         std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
                         for (size_t j = 0; j < it->second.size(); j++)
@@ -147,7 +150,7 @@ namespace forwarder
                                 {
                                     if (debug)
                                     {
-                                        std::cout << "[TCP] - Group [" << groupID << "], peer [" << j << "] is no longer connected, removing from group.\n";
+                                        std::cout << "[TCP - " + uuidString + "] - Group [" << groupID << "], peer [" << j << "] is no longer connected, removing from group.\n";
                                     }
                                     toRemove.push_back(j);
                                 }
@@ -157,14 +160,14 @@ namespace forwarder
                                     {
                                         if (debug)
                                         {
-                                            std::cout << "[TCP] - Group [" << groupID << "], successfully forwarded to peer [" << j << "]\n";
+                                            std::cout << "[TCP - " + uuidString + "] - Group [" << groupID << "], successfully forwarded to peer [" << j << "]\n";
                                         }
                                     }
                                     else
                                     {
                                         if (debug)
                                         {
-                                            std::cout << "[TCP] - Group [" << groupID << "], failed to send to peer [" << j << "], removing from group.\n";
+                                            std::cout << "[TCP - " + uuidString + "] - Group [" << groupID << "], failed to send to peer [" << j << "], removing from group.\n";
                                         }
                                         toRemove.push_back(j);
                                     }
@@ -174,7 +177,7 @@ namespace forwarder
                         if (debug)
                         {
                             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-                            std::cout << "[TCP] - Group [" << groupID << "] took [" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms] to forward message to [" << it->second.size() - 1 << "] peers.\n";
+                            std::cout << "[TCP - " + uuidString + "] - Group [" << groupID << "] took [" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms] to forward message to [" << it->second.size() - 1 << "] peers.\n";
                         }
                         
                         for (size_t index : toRemove)
@@ -236,7 +239,7 @@ namespace forwarder
                 if (result.second.first > 0 && result.first.has_value())
                 {
                     std::optional<std::string> resolvedAddress = kt::getAddress(result.second.second);
-                    std::string addressString = (resolvedAddress ? resolvedAddress.value() : "") + std::to_string(kt::getPortNumber(result.second.second));
+                    std::string addressString = (resolvedAddress ? resolvedAddress.value() : "") + ":" + std::to_string(kt::getPortNumber(result.second.second));
 
                     if (debug)
                     {
@@ -279,11 +282,12 @@ namespace forwarder
         {
             if (!udpMessageQueue.empty())
             {
+                std::string uuidString = getNewUUID();
                 std::string message = udpMessageQueue.front();
                 udpMessageQueue.pop();
                 if (debug)
                 {
-                    std::cout << "[UDP] - Received message [" << message << "] forwarding to peers.\n";
+                    std::cout << "[UDP - " + uuidString + "] - Received message [" << message << "] forwarding to peers.\n";
                 }
                     
                 std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
@@ -292,15 +296,15 @@ namespace forwarder
                     std::pair<bool, int> result = sendSocket.sendTo(message, addr);
                     if (debug)
                     {
-                        std::cout << "[UDP] - Forwarded to peer with address: " << kt::getAddress(addr).value() << ":" << kt::getPortNumber(addr) << ". With result " << result.second << "\n";
+                        std::cout << "[UDP - " + uuidString + "] - Forwarded to peer with address: [" << kt::getAddress(addr).value() << ":" << kt::getPortNumber(addr) << "]. With result [" << result.second << "]\n";
                     }
                 }
 
                 if (debug)
                 {
-                    std::cout << "[UDP] - Forwarded to [" << udpKnownPeers.size() << "] peer(s).\n";
+                    std::cout << "[UDP - " + uuidString + "] - Forwarded to [" << udpKnownPeers.size() << "] peer(s).\n";
                     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-                    std::cout << "[UDP] - Took [" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms] to forward message to [" << udpKnownPeers.size() << "] peers.\n";
+                    std::cout << "[UDP - " + uuidString + "] - Took [" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms] to forward message to [" << udpKnownPeers.size() << "] peers.\n";
                 }
             }
             else
@@ -321,5 +325,14 @@ namespace forwarder
     void stopForwarder()
     {
         forwarderIsRunning = false;
+    }
+
+    std::string getNewUUID()
+    {
+        uuid_t uuid{};
+        char temp[100];
+        uuid_generate(uuid);
+        uuid_unparse(uuid, temp);
+        return std::string(temp);
     }
 }

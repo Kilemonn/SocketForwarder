@@ -22,4 +22,6 @@ namespace forwarder
     size_t udpGroupMemberCount();
     
     void stopForwarder();
+
+    std::string getNewUUID();
 }
