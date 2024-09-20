@@ -292,7 +292,7 @@ namespace forwarder
                     std::pair<bool, int> result = sendSocket.sendTo(message, addr);
                     if (debug)
                     {
-                        std::cout << "Forwarded to peer with address: " << kt::getAddress(addr).value() << ":" << kt::getPortNumber(addr) << ". With result " << result.second << "\n";
+                        std::cout << "[UDP] - Forwarded to peer with address: " << kt::getAddress(addr).value() << ":" << kt::getPortNumber(addr) << ". With result " << result.second << "\n";
                     }
                 }
 
