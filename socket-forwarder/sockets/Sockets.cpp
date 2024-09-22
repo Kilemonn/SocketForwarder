@@ -22,7 +22,7 @@ namespace forwarder
 
         try
         {
-            kt::ServerSocket serverSocket(kt::SocketType::Wifi, std::string("0.0.0.0"), portNumber);
+            kt::ServerSocket serverSocket(kt::SocketType::Wifi, getEnvironmentVariableValueOrDefault(HOST_ADDRESS, std::string("0.0.0.0")), portNumber);
             return std::make_optional(serverSocket);
         }
         catch(const kt::BindingException e)
@@ -52,7 +52,7 @@ namespace forwarder
         try
         {
             kt::UDPSocket udpSocket;
-            if (!udpSocket.bind(std::string("0.0.0.0"), portNumber).first)
+            if (!udpSocket.bind(getEnvironmentVariableValueOrDefault(HOST_ADDRESS, std::string("0.0.0.0")), portNumber).first)
             {
                 std::cout << "[UDP] - Failed to bind to provided port " << portNumber << "\n";
                 return std::nullopt;
