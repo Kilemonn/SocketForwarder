@@ -18,7 +18,7 @@ namespace forwarder
         
     }
 
-    void Forwarder::startForwarder()
+    void Forwarder::start()
     {
         if (tcpServerSocket.has_value())
         {
@@ -334,7 +334,7 @@ namespace forwarder
         return udpKnownPeers.size();
     }
 
-    void Forwarder::stopForwarder()
+    void Forwarder::stop()
     {
         forwarderIsRunning = false;
     }

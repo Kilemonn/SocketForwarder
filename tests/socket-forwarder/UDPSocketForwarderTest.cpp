@@ -26,12 +26,12 @@ namespace forwarder
         void SetUp() override
 		{
             ASSERT_NE(forwarder, std::nullopt);
-            forwarder->startForwarder();
+            forwarder->start();
 		}
 
         void TearDown() override
         {
-			forwarder->stopForwarder();
+			forwarder->stop();
             forwarder->join();
 
 			udpSocket.close();

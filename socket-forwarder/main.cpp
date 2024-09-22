@@ -33,6 +33,6 @@ int main(int argc, char** argv)
 
     forwarder::Forwarder forwarder(serverSocket, udpSocket, newClientPrefix, maxReadInSize, debug);
 
-    forwarder.startForwarder();
+    forwarder.start();
     forwarder.join();
 }

@@ -64,10 +64,9 @@ namespace forwarder
         size_t tcpGroupMemberCount(std::string&);
         size_t udpGroupMemberCount();
         
-        void stopForwarder();
-        void startForwarder();
-
+        void start();
         void join();
+        void stop();
     };
 
     std::string getNewUUID();

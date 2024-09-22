@@ -20,12 +20,12 @@ namespace forwarder
         TCPSocketForwarderTest() : serverSocket(kt::SocketType::Wifi), forwarder(serverSocket, std::nullopt, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT, true) {}
         void SetUp() override
 		{
-			forwarder.startForwarder();	
+			forwarder.start();	
 		}
 
         void TearDown() override
         {
-			forwarder.stopForwarder();
+			forwarder.stop();
 			forwarder.join();
 
 			serverSocket.close();
