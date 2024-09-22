@@ -4,57 +4,68 @@
 #include <socketexceptions/SocketException.hpp>
 #include <socketexceptions/TimeoutException.hpp>
 
-#include <unordered_map>
-#include <unordered_set>
 #include <thread>
 #include <chrono>
 #include <vector>
-#include <queue>
 
 #include <uuid/uuid.h>
 
 namespace forwarder
 {
-    std::unordered_map<std::string, std::vector<kt::TCPSocket>> tcpSessions;
-
-    struct AddressHash
+    Forwarder::Forwarder(std::optional<kt::ServerSocket> tcpSocket, std::optional<kt::UDPSocket> udpSocket, const std::string prefix, const unsigned short maxRead, const bool debugFlag):
+        tcpServerSocket(tcpSocket), udpRecieveSocket(udpSocket), newClientPrefix(prefix), maxReadInSize(maxRead), debug(debugFlag)
     {
-        std::size_t operator()(const kt::SocketAddress& k) const
-        {
-            return std::hash<std::string>()(kt::getAddress(k).value() + ":" + std::to_string(kt::getPortNumber(k)));
-        }
-    };
- 
-    struct AddressEqual
+        
+    }
+
+    void Forwarder::start()
     {
-        bool operator()(const kt::SocketAddress& lhs, const kt::SocketAddress& rhs) const
+        if (tcpServerSocket.has_value())
         {
-            return std::memcmp(&lhs, &rhs, sizeof(lhs));
+            std::cout << "[TCP] - Running TCP forwarder on port [" << tcpServerSocket->getPort() << "]" << std::endl;
+            startTCPForwarder();
         }
-    };
+        else
+        {
+            std::cout << "[TCP] - No TCP socket was provided, TCP forwarding is disabled." << std::endl;
+        }
 
-    // For UDP since we don't know who is sending specific messages from, ALL UDP connections will be treated as the same group
-    std::unordered_set<kt::SocketAddress, AddressHash, AddressEqual> udpKnownPeers;
-    std::queue<std::string> udpMessageQueue;
+        if (udpRecieveSocket.has_value())
+        {
+            if (udpRecieveSocket->isUdpBound())
+            {
+                std::cout << "[UDP] - Running UDP forwarder on port [" << udpRecieveSocket->getListeningPort().value() << "]" << std::endl;
+                startUDPForwarder();
+            }
+            else
+            {
+                std::cout << "[UDP] - Provided UDP socket needs to be bound before it is passed into the forwarder. UDP forwarding will be disabled." << std::endl; 
+            }
+        }
+        else
+        {
+            std::cout << "[UDP] - No UDP socket was provided, UDP forwarding is disabled." << std::endl;
+        }
+    }
 
-    bool forwarderIsRunning;
-
-    std::pair<std::thread, std::thread> startTCPForwarder(kt::ServerSocket& serverSocket, std::string newClientPrefix, unsigned short maxReadInSize, bool debug)
+    void Forwarder::startTCPForwarder()
     {
         forwarderIsRunning = true;
 
         // Start one thread constantly receiving new connections and adding them to their correct group
-        std::thread listeningThread(startTCPConnectionListener, serverSocket, newClientPrefix, maxReadInSize, debug);
+        std::thread listeningThread(&Forwarder::startTCPConnectionListener, this);
         
         // Start a second thread that is constantly polling all TCPSockets in the session map and forwarding 
         // those messages to the other sockets in its group.
-        std::thread dataForwarderThread(startTCPDataForwarder, maxReadInSize, debug);
+        std::thread dataForwarderThread(&Forwarder::startTCPDataForwarder, this);
 
-        return std::make_pair(std::move(listeningThread), std::move(dataForwarderThread));
+        tcpRunningThreads = std::make_pair(std::move(listeningThread), std::move(dataForwarderThread));
     }
 
-    void startTCPConnectionListener(kt::ServerSocket serverSocket, std::string newClientPrefix, unsigned short maxReadInSize, bool debug)
+    void Forwarder::startTCPConnectionListener()
     {
+        kt::ServerSocket& serverSocket = tcpServerSocket.value();
+
         std::cout << "[TCP] - Starting TCP connection listener..." << std::endl;
         while(forwarderIsRunning)
         {
@@ -63,8 +74,7 @@ namespace forwarder
                 kt::TCPSocket socket = serverSocket.acceptTCPConnection(10000); // microseconds
                 std::string firstMessage = socket.receiveAmount(maxReadInSize);
 
-                std::optional<std::string> address = kt::getAddress(socket.getSocketAddress());
-                std::string addressString = (address ? address.value() : "") + ":" + std::to_string(kt::getPortNumber(socket.getSocketAddress()));
+                std::string addressString = kt::getAddress(socket.getSocketAddress()).value_or("") + ":" + std::to_string(kt::getPortNumber(socket.getSocketAddress()));
                 std::cout << "[TCP] - Accepted new connection from [" << addressString << "] and read message of size [" << firstMessage.size() << "].\n";
 
                 if (debug)
@@ -115,7 +125,7 @@ namespace forwarder
         serverSocket.close();
     }
 
-    void startTCPDataForwarder(unsigned short maxReadInSize, bool debug)
+    void Forwarder::startTCPDataForwarder()
     {
         std::cout << "[TCP] - Starting TCP forwarder listener..." << std::endl;
         while (forwarderIsRunning)
@@ -203,12 +213,12 @@ namespace forwarder
         tcpSessions.clear();
     }
 
-    bool tcpGroupWithIdExists(std::string& groupId)
+    bool Forwarder::tcpGroupWithIdExists(std::string& groupId)
     {
         return tcpSessions.find(groupId) != tcpSessions.end();
     }
 
-    size_t tcpGroupMemberCount(std::string& groupId)
+    size_t Forwarder::tcpGroupMemberCount(std::string& groupId)
     {
         auto group = tcpSessions.find(groupId);
         if (group != tcpSessions.end())
@@ -218,17 +228,19 @@ namespace forwarder
         return 0;
     }
 
-    std::pair<std::thread, std::thread> startUDPForwarder(kt::UDPSocket& udpSocket, std::string newClientPrefix, unsigned short maxReadInSize, bool debug)
+    void Forwarder::startUDPForwarder()
     {
         forwarderIsRunning = true;
 
-        std::thread listeningThread(startUDPListener, udpSocket, newClientPrefix, maxReadInSize, debug);
-        std::thread responderThread(startUDPDataForwarder, debug);
-        return std::make_pair(std::move(listeningThread), std::move(responderThread));
+        std::thread listeningThread(&Forwarder::startUDPListener, this);
+        std::thread responderThread(&Forwarder::startUDPDataForwarder, this);
+        udpRunningThreads = std::make_pair(std::move(listeningThread), std::move(responderThread));
     }
 
-    void startUDPListener(kt::UDPSocket udpSocket, std::string newClientPrefix, unsigned short maxReadInSize, bool debug)
+    void Forwarder::startUDPListener()
     {
+        kt::UDPSocket& udpSocket = udpRecieveSocket.value();
+
         std::cout << "[UDP] - Starting UDP forwarder connection listener..." << std::endl;
         while (forwarderIsRunning)
         {
@@ -238,15 +250,14 @@ namespace forwarder
             
                 if (result.second.first > 0 && result.first.has_value())
                 {
-                    std::optional<std::string> resolvedAddress = kt::getAddress(result.second.second);
-                    std::string addressString = (resolvedAddress ? resolvedAddress.value() : "") + ":" + std::to_string(kt::getPortNumber(result.second.second));
+                    std::string addressString = kt::getAddress(result.second.second).value_or("") + ":" + std::to_string(kt::getPortNumber(result.second.second));
 
                     if (debug)
                     {
                         std::cout << "[UDP] - Read in successful with result " << result.second.first << " data: " << (result.first.has_value() ? result.first.value() : "") << "\n";
                     }
 
-                    std::string message = result.first.value();
+                    std::string& message = result.first.value();
 
                     if (debug)
                     {
@@ -274,7 +285,7 @@ namespace forwarder
         udpSocket.close();
     }
 
-    void startUDPDataForwarder(bool debug)
+    void Forwarder::startUDPDataForwarder()
     {
         std::cout << "[UDP] - Starting UDP data forwarder listener..." << std::endl;
         kt::UDPSocket sendSocket;
@@ -290,14 +301,14 @@ namespace forwarder
                 {
                     std::cout << "[UDP - " + uuidString + "] - Received message [" << message << "] forwarding to peers.\n";
                 }
-                    
+
                 std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
                 for (const kt::SocketAddress& addr : udpKnownPeers)
                 {
                     std::pair<bool, int> result = sendSocket.sendTo(message, addr);
                     if (debug)
                     {
-                        std::cout << "[UDP - " + uuidString + "] - Forwarded to peer with address: [" << kt::getAddress(addr).value() << ":" << kt::getPortNumber(addr) << "]. With result [" << result.second << "]\n";
+                        std::cout << "[UDP - " + uuidString + "] - Forwarded to peer with address: [" << kt::getAddress(addr).value_or("") + ":" + std::to_string(kt::getPortNumber(addr)) << "]. With result [" << result.second << "]\n";
                     }
                 }
 
@@ -318,14 +329,29 @@ namespace forwarder
         udpKnownPeers.clear();
     }
 
-    size_t udpGroupMemberCount()
+    size_t Forwarder::udpGroupMemberCount()
     {
         return udpKnownPeers.size();
     }
 
-    void stopForwarder()
+    void Forwarder::stop()
     {
         forwarderIsRunning = false;
+    }
+
+    void Forwarder::join()
+    {
+        if (tcpRunningThreads.has_value())
+        {
+            tcpRunningThreads->first.join();
+            tcpRunningThreads->second.join();
+        }
+
+        if (udpRunningThreads.has_value())
+        {
+            udpRunningThreads->first.join();
+            udpRunningThreads->second.join();
+        }
     }
 
     std::string getNewUUID()
