@@ -23,6 +23,8 @@ Example command:
 
 ### From Docker Image
 
+Image available at: https://hub.docker.com/r/kilemon/socket-forwarder
+
 **Make sure you `EXPOSE` the required ports that you wish to use as listener ports. By default the image exposes no ports.**
 
 Running the container allows you to customise the forwarder in specific ways as per the environment variables that you provide on startup to the application.
