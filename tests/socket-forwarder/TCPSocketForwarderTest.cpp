@@ -15,20 +15,18 @@ namespace forwarder
 	{
 	protected:
         kt::ServerSocket serverSocket;
-		std::pair<std::thread, std::thread> runningThreads;
+		forwarder::Forwarder forwarder;
     protected:
-        TCPSocketForwarderTest() : serverSocket(kt::SocketType::Wifi) {}
+        TCPSocketForwarderTest() : serverSocket(kt::SocketType::Wifi), forwarder(serverSocket, std::nullopt, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT, true) {}
         void SetUp() override
 		{
-			runningThreads = startTCPForwarder(serverSocket, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT, true);
+			forwarder.startForwarder();	
 		}
 
         void TearDown() override
         {
-			stopForwarder();
-
-			runningThreads.first.join();
-			runningThreads.second.join();
+			forwarder.stopForwarder();
+			forwarder.join();
 
 			serverSocket.close();
         }
@@ -37,30 +35,30 @@ namespace forwarder
 	TEST_F(TCPSocketForwarderTest, TestSendToGroup_OtherGroupsDoNotReceive_SenderDoesNotReceiveOwnMessage)
 	{
 		std::string groupId = "98235123";
-		ASSERT_FALSE(tcpGroupWithIdExists(groupId));
+		ASSERT_FALSE(forwarder.tcpGroupWithIdExists(groupId));
 		
 		kt::TCPSocket client1("localhost", serverSocket.getPort());
 		ASSERT_TRUE(client1.send(NEW_CLIENT_PREFIX_DEFAULT + groupId).first);
 		std::this_thread::sleep_for(10ms);
 
-		ASSERT_TRUE(tcpGroupWithIdExists(groupId));
-		ASSERT_EQ(1, tcpGroupMemberCount(groupId));
+		ASSERT_TRUE(forwarder.tcpGroupWithIdExists(groupId));
+		ASSERT_EQ(1, forwarder.tcpGroupMemberCount(groupId));
 
 		kt::TCPSocket client2("localhost", serverSocket.getPort());
 		ASSERT_TRUE(client2.send(NEW_CLIENT_PREFIX_DEFAULT + groupId).first);
 		std::this_thread::sleep_for(10ms);
 
-		ASSERT_EQ(2, tcpGroupMemberCount(groupId));
+		ASSERT_EQ(2, forwarder.tcpGroupMemberCount(groupId));
 
 		std::string client3GroupId = "112343";
 		ASSERT_NE(client3GroupId, groupId);
-		ASSERT_FALSE(tcpGroupWithIdExists(client3GroupId));
+		ASSERT_FALSE(forwarder.tcpGroupWithIdExists(client3GroupId));
 
 		kt::TCPSocket client3("localhost", serverSocket.getPort());
 		ASSERT_TRUE(client3.send(NEW_CLIENT_PREFIX_DEFAULT + client3GroupId).first);
 		std::this_thread::sleep_for(10ms);
 
-		ASSERT_EQ(1, tcpGroupMemberCount(client3GroupId));
+		ASSERT_EQ(1, forwarder.tcpGroupMemberCount(client3GroupId));
 
 		std::string toSend = "TCPSocketForwarderTest";
 		ASSERT_TRUE(client1.send(toSend).first);
@@ -93,7 +91,7 @@ namespace forwarder
 	TEST_F(TCPSocketForwarderTest, TestClientDisconnects)
 	{
 		std::string groupId = "TestClientDisconnects-group";
-		ASSERT_FALSE(tcpGroupWithIdExists(groupId));
+		ASSERT_FALSE(forwarder.tcpGroupWithIdExists(groupId));
 
 		kt::TCPSocket client1("localhost", serverSocket.getPort());
 		kt::TCPSocket client2("localhost", serverSocket.getPort());
@@ -104,8 +102,8 @@ namespace forwarder
 		ASSERT_TRUE(client3.send(NEW_CLIENT_PREFIX_DEFAULT + groupId).first);
 		std::this_thread::sleep_for(10ms);
 
-		ASSERT_TRUE(tcpGroupWithIdExists(groupId));
-		ASSERT_EQ(3, tcpGroupMemberCount(groupId));
+		ASSERT_TRUE(forwarder.tcpGroupWithIdExists(groupId));
+		ASSERT_EQ(3, forwarder.tcpGroupMemberCount(groupId));
 
 		client3.close();
 		std::this_thread::sleep_for(50ms);
@@ -126,7 +124,7 @@ namespace forwarder
 		recieved = client2.receiveAmount(100);
 		ASSERT_EQ(content + content, recieved);
 
-		ASSERT_EQ(2, tcpGroupMemberCount(groupId));
+		ASSERT_EQ(2, forwarder.tcpGroupMemberCount(groupId));
 
 		client1.close();
 		client2.close();
@@ -137,8 +135,9 @@ namespace forwarder
 		const size_t amountOfClients = 200;
 		std::string groupId = "TestNumerousClients-group";
 		std::vector<kt::TCPSocket> sockets;
+		sockets.reserve(amountOfClients);
 
-		ASSERT_FALSE(tcpGroupWithIdExists(groupId));
+		ASSERT_FALSE(forwarder.tcpGroupWithIdExists(groupId));
 
 		for (size_t i = 0; i < amountOfClients; i++)
 		{
@@ -148,15 +147,15 @@ namespace forwarder
 		}
 		std::this_thread::sleep_for(10ms);
 
-		ASSERT_TRUE(tcpGroupWithIdExists(groupId));
-		ASSERT_EQ(amountOfClients, tcpGroupMemberCount(groupId));
+		ASSERT_TRUE(forwarder.tcpGroupWithIdExists(groupId));
+		ASSERT_EQ(amountOfClients, forwarder.tcpGroupMemberCount(groupId));
 
 		const size_t sendFromIndex = 0;
 		const size_t messagesToSend = 1000;
 		std::string message = "TestNumerousClients";
 		for (size_t i = 0; i < messagesToSend; i++)
 		{
-			kt::TCPSocket socket = sockets[sendFromIndex];
+			kt::TCPSocket& socket = sockets[sendFromIndex];
 			ASSERT_TRUE(socket.send(message + std::to_string(i)).first);
 		}
 		std::this_thread::sleep_for(100ms);
@@ -165,7 +164,7 @@ namespace forwarder
 		{
 			for (size_t clientIndex = 1; clientIndex < amountOfClients; clientIndex++)
 			{
-				kt::TCPSocket socket = sockets[clientIndex];
+				kt::TCPSocket& socket = sockets[clientIndex];
 				ASSERT_TRUE(socket.ready());
 				std::string received = socket.receiveAmount(message.size() + std::to_string(i).size());
 				ASSERT_EQ(message + std::to_string(i), received);
@@ -175,7 +174,7 @@ namespace forwarder
 
 		for (size_t i = 0; i < amountOfClients; i++)
 		{
-			kt::TCPSocket socket = sockets[i];
+			kt::TCPSocket& socket = sockets[i];
 			socket.close();
 		}
 	}

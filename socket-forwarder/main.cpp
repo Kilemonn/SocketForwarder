@@ -31,39 +31,8 @@ int main(int argc, char** argv)
     std::optional<kt::ServerSocket> serverSocket = forwarder::setUpTcpServerSocket(argc > 1 ? std::make_optional(std::string(argv[1])) : std::nullopt);
     std::optional<kt::UDPSocket> udpSocket = forwarder::setUpUDPSocket(argc > 2 ? std::make_optional(std::string(argv[2])) : std::nullopt);
 
-    std::optional<std::pair<std::thread, std::thread>> tcpRunningThreads = std::nullopt;
-    std::optional<std::pair<std::thread, std::thread>> udpRunningThreads = std::nullopt;
+    forwarder::Forwarder forwarder(serverSocket, udpSocket, newClientPrefix, maxReadInSize, debug);
 
-    if (serverSocket.has_value())
-    {
-        std::cout << "[TCP] - Running TCP forwarder on port [" << serverSocket.value().getPort() << "]" << std::endl;
-        tcpRunningThreads = forwarder::startTCPForwarder(serverSocket.value(), newClientPrefix, maxReadInSize, debug);
-    }
-    else
-    {
-        std::cout << "[TCP] - No TCP socket was setup and listening since [" << forwarder::TCP_PORT << "] environment variable was not provided." << std::endl;
-    }
-
-    if (udpSocket.has_value() && udpSocket.value().getListeningPort().has_value())
-    {        
-        std::cout << "[UDP] - Running UDP forwarder on port [" << udpSocket.value().getListeningPort().value() << "]" << std::endl;
-
-        udpRunningThreads = forwarder::startUDPForwarder(udpSocket.value(), newClientPrefix, maxReadInSize, debug);
-    }
-    else
-    {
-        std::cout << "[UDP] - No UDP socket was setup and listening since [" << forwarder::UDP_PORT << "] environment variable was not provided." << std::endl;
-    }
-
-    if (tcpRunningThreads.has_value())
-    {
-        tcpRunningThreads.value().first.join();
-        tcpRunningThreads.value().second.join();
-    }
-
-    if (udpRunningThreads.has_value())
-    {
-        udpRunningThreads.value().first.join();
-        udpRunningThreads.value().second.join();
-    }
+    forwarder.startForwarder();
+    forwarder.join();
 }

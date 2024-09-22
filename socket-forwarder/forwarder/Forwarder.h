@@ -3,6 +3,9 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <unordered_map>
+#include <unordered_set>
+#include <queue>
 
 #include <serversocket/ServerSocket.h>
 #include <socket/TCPSocket.h>
@@ -10,18 +13,62 @@
 
 namespace forwarder
 {
-    std::pair<std::thread, std::thread> startTCPForwarder(kt::ServerSocket&, std::string, unsigned short, bool);
-    void startTCPConnectionListener(kt::ServerSocket, std::string, unsigned short, bool);
-    void startTCPDataForwarder(unsigned short, bool);
-    bool tcpGroupWithIdExists(std::string&);
-    size_t tcpGroupMemberCount(std::string&);
+    class Forwarder
+    {
+    protected:
+        std::unordered_map<std::string, std::vector<kt::TCPSocket>> tcpSessions;
 
-    std::pair<std::thread, std::thread> startUDPForwarder(kt::UDPSocket&, std::string, unsigned short, bool);
-    void startUDPListener(kt::UDPSocket, std::string, unsigned short, bool);
-    void startUDPDataForwarder(bool);
-    size_t udpGroupMemberCount();
-    
-    void stopForwarder();
+        struct AddressHash
+        {
+            std::size_t operator()(const kt::SocketAddress& k) const
+            {
+                return std::hash<std::string>()(kt::getAddress(k).value_or("") + ":" + std::to_string(kt::getPortNumber(k)));
+            }
+        };
+
+        struct AddressEqual
+        {
+            bool operator()(const kt::SocketAddress& lhs, const kt::SocketAddress& rhs) const
+            {
+                return std::memcmp(&lhs, &rhs, sizeof(lhs));
+            }
+        };
+
+        // For UDP since we don't know who is sending specific messages from, ALL UDP connections will be treated as the same group
+        std::unordered_set<kt::SocketAddress, AddressHash, AddressEqual> udpKnownPeers;
+        std::queue<std::string> udpMessageQueue;
+
+        std::optional<std::pair<std::thread, std::thread>> tcpRunningThreads = std::nullopt;
+        std::optional<std::pair<std::thread, std::thread>> udpRunningThreads = std::nullopt;
+
+        bool forwarderIsRunning = false;
+        std::string newClientPrefix;
+        unsigned short maxReadInSize;
+        bool debug = false;
+
+        std::optional<kt::UDPSocket> udpRecieveSocket = std::nullopt;
+        std::optional<kt::ServerSocket> tcpServerSocket = std::nullopt;
+
+        void startUDPForwarder();
+        void startUDPListener();
+        void startUDPDataForwarder();
+
+        void startTCPForwarder();
+        void startTCPConnectionListener();
+        void startTCPDataForwarder();
+
+    public:
+        Forwarder(std::optional<kt::ServerSocket>, std::optional<kt::UDPSocket>, const std::string, const unsigned short, const bool);
+
+        bool tcpGroupWithIdExists(std::string&);
+        size_t tcpGroupMemberCount(std::string&);
+        size_t udpGroupMemberCount();
+        
+        void stopForwarder();
+        void startForwarder();
+
+        void join();
+    };
 
     std::string getNewUUID();
 }

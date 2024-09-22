@@ -14,10 +14,11 @@ namespace forwarder
 
         if (!tcpPort.has_value() && !defaultPort.has_value())
         {
+            std::cout << "Skipping TCP socket creation since value for [" + forwarder::TCP_PORT + "] was not provided." << std::endl;
             return std::nullopt;
         }
 
-        std::string portAsString = tcpPort.has_value() ? tcpPort.value() : defaultPort.value();
+        std::string portAsString = tcpPort.value_or(*defaultPort);
         const unsigned short portNumber = static_cast<unsigned short>(std::stoi(portAsString));
 
         try
@@ -43,10 +44,11 @@ namespace forwarder
 
         if (!udpPort.has_value() && !defaultPort.has_value())
         {
+            std::cout << "Skipping UDP socket creation since value for [" + forwarder::UDP_PORT + "] was not provided." << std::endl;
             return std::nullopt;
         }
 
-        std::string portAsString = udpPort.has_value() ? udpPort.value() : defaultPort.value();
+        std::string portAsString = udpPort.value_or(*defaultPort);
         const unsigned short portNumber = static_cast<unsigned short>(std::stoi(portAsString));
 
         try
