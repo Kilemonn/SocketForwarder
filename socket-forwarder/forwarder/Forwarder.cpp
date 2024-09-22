@@ -126,7 +126,7 @@ namespace forwarder
                 std::string groupID = it->first;
                 for (size_t i = 0; i < it->second.size(); i++)
                 {
-                    kt::TCPSocket receiveSocket = it->second[i];
+                    const kt::TCPSocket& receiveSocket = it->second[i];
                     if (receiveSocket.ready(1))
                     {
                         std::string received = receiveSocket.receiveAmount(maxReadInSize);
@@ -145,7 +145,7 @@ namespace forwarder
                         {
                             if (j != i)
                             {
-                                kt::TCPSocket forwardToSocket = it->second[j];
+                                const kt::TCPSocket& forwardToSocket = it->second[j];
                                 if (!forwardToSocket.connected())
                                 {
                                     if (debug)
@@ -195,7 +195,7 @@ namespace forwarder
         // Once we are out of the loop just run through and close everything
         for (auto it = tcpSessions.begin(); it != tcpSessions.end(); ++it)
         {
-            for (kt::TCPSocket socket : it->second)
+            for (const kt::TCPSocket& socket : it->second)
             {
                 socket.close();
             }
@@ -247,7 +247,6 @@ namespace forwarder
                     }
 
                     std::string message = result.first.value();
-                    kt::SocketAddress address = result.second.second;
 
                     if (debug)
                     {
@@ -260,6 +259,7 @@ namespace forwarder
                         std::string recievingPort = message.substr(newClientPrefix.size());
                         std::cout << "[UDP] - New client joined UDP group from address [" << addressString << "] with request reply port [" << recievingPort << "]\n";
 
+                        kt::SocketAddress address = result.second.second;
                         address.ipv4.sin_port = htons(std::atoi(recievingPort.c_str()));
                         udpKnownPeers.emplace(address);
                     }
@@ -285,13 +285,14 @@ namespace forwarder
                 std::string uuidString = getNewUUID();
                 std::string message = udpMessageQueue.front();
                 udpMessageQueue.pop();
+
                 if (debug)
                 {
                     std::cout << "[UDP - " + uuidString + "] - Received message [" << message << "] forwarding to peers.\n";
                 }
                     
                 std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-                for (kt::SocketAddress addr : udpKnownPeers)
+                for (const kt::SocketAddress& addr : udpKnownPeers)
                 {
                     std::pair<bool, int> result = sendSocket.sendTo(message, addr);
                     if (debug)
