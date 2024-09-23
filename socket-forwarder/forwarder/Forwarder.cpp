@@ -14,8 +14,46 @@ namespace forwarder
 {
     Forwarder::Forwarder(std::optional<kt::ServerSocket> tcpSocket, std::optional<kt::UDPSocket> udpSocket, const std::string prefix, const unsigned short maxRead, const bool debugFlag):
         tcpServerSocket(tcpSocket), udpRecieveSocket(udpSocket), newClientPrefix(prefix), maxReadInSize(maxRead), debug(debugFlag)
+    { }
+
+    void Forwarder::addAddressToTCPGroup(const std::string& groupId, kt::SocketAddress address)
     {
-        
+        try
+        {
+            kt::TCPSocket socket(address);
+            addSocketToTCPGroup(groupId, socket);
+        }
+        catch(kt::SocketException ex)
+        {
+            std::string addressString = kt::getAddress(address).value_or("") + ":" + std::to_string(kt::getPortNumber(address));
+            std::cout << "[TCP] - Failed to add address [" << addressString << "], failed to connect to the provided address. Error [" << ex.what() << "]." << std::endl;
+        }
+    }
+
+    void Forwarder::addSocketToTCPGroup(const std::string& groupId, kt::TCPSocket socket)
+    {
+        std::string addressString = kt::getAddress(socket.getSocketAddress()).value_or("") + ":" + std::to_string(kt::getPortNumber(socket.getSocketAddress()));
+
+        if (tcpSessions.find(groupId) == tcpSessions.end())
+        {
+            std::cout << "[TCP] - Creating new group with ID [" << groupId << "], adding address [" << addressString << "] to group.\n";
+            // No existing groups with this ID, creating new
+            std::vector<kt::TCPSocket> sockets = { socket };
+            tcpSessions.insert(std::make_pair(groupId, sockets));
+        }
+        else
+        {
+            if (debug)
+            {
+                std::cout << "[TCP] - Adding new connection [" << addressString << "] to group [" << groupId << "].\n";
+            }
+            tcpSessions[groupId].push_back(socket);
+        }
+    }
+
+    void Forwarder::addAddressToUDPGroup(kt::SocketAddress address)
+    {
+        udpKnownPeers.emplace(address);
     }
 
     void Forwarder::start()
@@ -85,22 +123,7 @@ namespace forwarder
                 if (firstMessage.rfind(newClientPrefix, 0) == 0)
                 {
                     std::string groupId = firstMessage.substr(newClientPrefix.size());
-                    if (tcpSessions.find(groupId) == tcpSessions.end())
-                    {
-                        std::cout << "[TCP] - Group [" << groupId << "] does not exist, creating new group and adding connection [" << addressString << "].\n";
-                        // No existing sessions, create new
-                        std::vector<kt::TCPSocket> sockets;
-                        sockets.push_back(socket);
-                        tcpSessions.insert(std::make_pair(groupId, sockets));
-                    }
-                    else
-                    {
-                        if (debug)
-                        {
-                            std::cout << "[TCP] - Group [" << groupId << "] exists! Adding new connection [" << addressString << "] to group.\n";
-                        }
-                        tcpSessions[groupId].push_back(socket);
-                    }
+                    addSocketToTCPGroup(groupId, socket);
                 }
                 else
                 {
@@ -251,12 +274,6 @@ namespace forwarder
                 if (result.second.first > 0 && result.first.has_value())
                 {
                     std::string addressString = kt::getAddress(result.second.second).value_or("") + ":" + std::to_string(kt::getPortNumber(result.second.second));
-
-                    if (debug)
-                    {
-                        std::cout << "[UDP] - Read in successful with result " << result.second.first << " data: " << (result.first.has_value() ? result.first.value() : "") << "\n";
-                    }
-
                     std::string& message = result.first.value();
 
                     if (debug)
@@ -272,7 +289,7 @@ namespace forwarder
 
                         kt::SocketAddress address = result.second.second;
                         address.ipv4.sin_port = htons(std::atoi(recievingPort.c_str()));
-                        udpKnownPeers.emplace(address);
+                        addAddressToUDPGroup(address);
                     }
                     else
                     {

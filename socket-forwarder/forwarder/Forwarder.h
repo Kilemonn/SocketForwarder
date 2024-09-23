@@ -57,8 +57,13 @@ namespace forwarder
         void startTCPConnectionListener();
         void startTCPDataForwarder();
 
+        void addSocketToTCPGroup(const std::string&, kt::TCPSocket);
+
     public:
         Forwarder(std::optional<kt::ServerSocket>, std::optional<kt::UDPSocket>, const std::string, const unsigned short, const bool);
+
+        void addAddressToTCPGroup(const std::string&, kt::SocketAddress);
+        void addAddressToUDPGroup(kt::SocketAddress);
 
         bool tcpGroupWithIdExists(std::string&);
         size_t tcpGroupMemberCount(std::string&);
