@@ -5,19 +5,15 @@
 #include <thread>
 #include <algorithm>
 
-#include <csignal>
-
 #include "sockets/Sockets.h"
 #include "environment/Environment.h"
 #include "forwarder/Forwarder.h"
 
 // Make sure version of built image matches
-const std::string VERSION = "0.2.1";
+const std::string VERSION = "0.3.0";
 
 int main(int argc, char** argv)
 {
-    // TODO: Add env arg to provide a list of UDP clients that are already part of the UDP group on start up
-
     std::cout << "Running SocketForwarder v" << VERSION << std::endl;
 
     const std::string newClientPrefix = forwarder::getEnvironmentVariableValueOrDefault(forwarder::NEW_CLIENT_PREFIX, forwarder::NEW_CLIENT_PREFIX_DEFAULT);
@@ -26,12 +22,36 @@ int main(int argc, char** argv)
 
     std::cout << "Using new client prefix: [" << newClientPrefix << "].\n" 
         << "Using max read in size: [" << maxReadInSize << "].\n"
-        << "DEBUG flag set to [" << debug << "]." << std::endl;
+        << "DEBUG flag set to [" << debug << "].\n"
+        << "Binding to host address [" << forwarder::getEnvironmentVariableValueOrDefault(forwarder::HOST_ADDRESS, forwarder::HOST_ADDRESS_DEFAULT) << "]." << std::endl;
 
     std::optional<kt::ServerSocket> serverSocket = forwarder::setUpTcpServerSocket(argc > 1 ? std::make_optional(std::string(argv[1])) : std::nullopt);
     std::optional<kt::UDPSocket> udpSocket = forwarder::setUpUDPSocket(argc > 2 ? std::make_optional(std::string(argv[2])) : std::nullopt);
 
     forwarder::Forwarder forwarder(serverSocket, udpSocket, newClientPrefix, maxReadInSize, debug);
+
+    std::vector<kt::SocketAddress> udpPreconfiguredAddresses = forwarder::getPreconfiguredUDPAddresses();
+    if (!udpPreconfiguredAddresses.empty())
+    {
+        std::cout << "UDP preconfigured addresses provided, setting into forwarder...";
+        for (const kt::SocketAddress& addr : udpPreconfiguredAddresses)
+        {
+            forwarder.addAddressToUDPGroup(addr);
+        }
+    }
+
+    std::unordered_map<std::string, std::vector<kt::SocketAddress>> tcpPreconfiguredAddresses = forwarder::getPreconfiguredTCPAddresses();
+    if (!tcpPreconfiguredAddresses.empty())
+    {
+        std::cout << "TCP preconfigured addresses provided, setting into forwarder...";
+        for (const auto& it : tcpPreconfiguredAddresses)
+        {
+            for (const kt::SocketAddress& addr : it.second)
+            {
+                forwarder.addAddressToTCPGroup(it.first, addr);
+            }
+        }
+    }
 
     forwarder.start();
     forwarder.join();
