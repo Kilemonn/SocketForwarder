@@ -33,7 +33,7 @@ int main(int argc, char** argv)
     std::vector<kt::SocketAddress> udpPreconfiguredAddresses = forwarder::getPreconfiguredUDPAddresses();
     if (!udpPreconfiguredAddresses.empty())
     {
-        std::cout << "UDP preconfigured addresses provided, setting into forwarder...";
+        std::cout << "UDP preconfigured addresses provided, setting into forwarder..." << std::endl;
         for (const kt::SocketAddress& addr : udpPreconfiguredAddresses)
         {
             forwarder.addAddressToUDPGroup(addr);
@@ -43,7 +43,7 @@ int main(int argc, char** argv)
     std::unordered_map<std::string, std::vector<kt::SocketAddress>> tcpPreconfiguredAddresses = forwarder::getPreconfiguredTCPAddresses();
     if (!tcpPreconfiguredAddresses.empty())
     {
-        std::cout << "TCP preconfigured addresses provided, setting into forwarder...";
+        std::cout << "TCP preconfigured addresses provided, setting into forwarder..." << std::endl;
         for (const auto& it : tcpPreconfiguredAddresses)
         {
             for (const kt::SocketAddress& addr : it.second)
