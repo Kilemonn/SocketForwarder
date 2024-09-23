@@ -11,16 +11,16 @@ namespace forwarder
     const std::string MAX_READ_IN_SIZE = SOCKET_FORWARDER_PREFIX + "max_read_in_size";
     const std::string DEBUG = SOCKET_FORWARDER_PREFIX + "debug";
 
-    const std::string PRECONFIG_ADDRESS_SUFFIX = "preconfig_address";
+    const std::string PRECONFIG_ADDRESSES_SUFFIX = "preconfig_addresses";
     const std::string PORT_SUFFIX = "port";
 
     const std::string TCP = "tcp.";
     const std::string TCP_PORT = SOCKET_FORWARDER_PREFIX + TCP + PORT_SUFFIX;
-    const std::string PRECONFIG_TCP_ADDRESSES = SOCKET_FORWARDER_PREFIX + TCP + PRECONFIG_ADDRESS_SUFFIX;
+    const std::string PRECONFIG_TCP_ADDRESSES = SOCKET_FORWARDER_PREFIX + TCP + PRECONFIG_ADDRESSES_SUFFIX;
     
     const std::string UDP = "udp.";
     const std::string UDP_PORT = SOCKET_FORWARDER_PREFIX + UDP + PORT_SUFFIX;
-    const std::string PRECONFIG_UDP_ADDRESSES = SOCKET_FORWARDER_PREFIX + UDP + PRECONFIG_ADDRESS_SUFFIX;
+    const std::string PRECONFIG_UDP_ADDRESSES = SOCKET_FORWARDER_PREFIX + UDP + PRECONFIG_ADDRESSES_SUFFIX;
 
     const std::string NEW_CLIENT_PREFIX_DEFAULT = "SOCKETFORWARDER-NEW:";
     const unsigned short MAX_READ_IN_DEFAULT = 10240;

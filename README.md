@@ -93,10 +93,27 @@ This will be the address that the application binds to for both TCP and UDP.
 
 #### socketforwarder.tcp.preconfig_addresses
 
+*If not provided no addresses will be preconfigured into any TCP groups.*
+
+This property allows you to pre-register specific addresses under specific TCP groups during startup. This property acts as a whitelist for incoming TCP connections, any address in this list does not need to explicitly subscribe to the forwarder. Upon accepting the TCP connection request the forwarder will automatically place this socket into the correct group that was initially configured and forward appropriate messages to this connection.
+
+If there are any interruptions to the socket connection, the client can attempt to re-connect and the forwarder will maintain this preconfigured list for its lifetime and always automatically accept and emplace socket connections coming from the provided addresses into the correct group.
+
+The format for this property is as follows, firstly specifying the group ID, the address and port then commas after each entry. E.g. `"group1:localhost:12345,group1:localhost:34211,group2:localhost:45321"`
+
+For clarity, using the configuration above, any incoming TCP connection from "localhost:45321" will be accepted and placed immediately into the "group2" group. The client does not need to send any initial message to verify itself.
 
 ---
 
 #### socketforwarder.udp.preconfig_addresses
 
+*If not provided no addresses will be preconfigured into the UDP group.*
+
+This property allows you to pre-register specific addresses under the UDP group. Meaning that the UDP clients do not need to register or subscribe to the forwarder, the forwarder will automatically add these address (if resolved successfully) and begin forwarding messages to theses addresses immediately.
+
+Since the UDP forwarder cannot detect disconnections through UDP, any address added will continue to have all messages forwarded to it until the forwarder is stopped.
+
+The format for this is a comma separated list of "hostname:port".
+E.g. `"localhost:65432,localhost:44321"`
 
 ---

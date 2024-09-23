@@ -49,6 +49,8 @@ namespace forwarder
         std::optional<kt::UDPSocket> udpRecieveSocket = std::nullopt;
         std::optional<kt::ServerSocket> tcpServerSocket = std::nullopt;
 
+        std::unordered_map<kt::SocketAddress, std::string, AddressHash, AddressEqual> tcpPreconfigured;
+
         void startUDPForwarder();
         void startUDPListener();
         void startUDPDataForwarder();
@@ -62,7 +64,7 @@ namespace forwarder
     public:
         Forwarder(std::optional<kt::ServerSocket>, std::optional<kt::UDPSocket>, const std::string, const unsigned short, const bool);
 
-        void addAddressToTCPGroup(const std::string&, kt::SocketAddress);
+        void preConfigureTCPAddress(const std::string&, kt::SocketAddress);
         void addAddressToUDPGroup(kt::SocketAddress);
 
         bool tcpGroupWithIdExists(std::string&);

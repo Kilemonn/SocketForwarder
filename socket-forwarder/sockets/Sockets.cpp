@@ -84,7 +84,11 @@ namespace forwarder
         for (const std::string& s : addressStrings)
         {
             std::vector<std::string> parts = split(s, ":");
-            if (parts.size() < 3)
+            if (parts.size() == 1 && parts[0] == "")
+            {
+                // Skip
+            }
+            else if (parts.size() < 3)
             {
                 std::cout << "[TCP] - Unable to add address [" << s << "], expected format to be \"<groupId>:<address>:<port number>\"." << std::endl;
             }
@@ -134,7 +138,11 @@ namespace forwarder
         for (const std::string& s : addressStrings)
         {
             std::vector<std::string> parts = split(s, ":");
-            if (parts.size() < 2)
+            if (parts.size() == 1 && parts[0] == "")
+            {
+                // Skip
+            }
+            else if (parts.size() < 2)
             {
                 std::cout << "[UDP] - Unable to add address [" << s << "], expected format to be \"<address>:<port number>\"." << std::endl;
             }

@@ -16,20 +16,6 @@ namespace forwarder
         tcpServerSocket(tcpSocket), udpRecieveSocket(udpSocket), newClientPrefix(prefix), maxReadInSize(maxRead), debug(debugFlag)
     { }
 
-    void Forwarder::addAddressToTCPGroup(const std::string& groupId, kt::SocketAddress address)
-    {
-        try
-        {
-            kt::TCPSocket socket(address);
-            addSocketToTCPGroup(groupId, socket);
-        }
-        catch(kt::SocketException ex)
-        {
-            std::string addressString = kt::getAddress(address).value_or("") + ":" + std::to_string(kt::getPortNumber(address));
-            std::cout << "[TCP] - Failed to add address [" << addressString << "], failed to connect to the provided address. Error [" << ex.what() << "]." << std::endl;
-        }
-    }
-
     void Forwarder::addSocketToTCPGroup(const std::string& groupId, kt::TCPSocket socket)
     {
         std::string addressString = kt::getAddress(socket.getSocketAddress()).value_or("") + ":" + std::to_string(kt::getPortNumber(socket.getSocketAddress()));
@@ -48,6 +34,19 @@ namespace forwarder
                 std::cout << "[TCP] - Adding new connection [" << addressString << "] to group [" << groupId << "].\n";
             }
             tcpSessions[groupId].push_back(socket);
+        }
+    }
+
+    void Forwarder::preConfigureTCPAddress(const std::string& groupId, kt::SocketAddress address)
+    {
+        if (tcpPreconfigured.find(address) != tcpPreconfigured.end())
+        {
+            std::cout << "[TCP] - Address [" << kt::getAddress(address).value_or("") + ":" + std::to_string(kt::getPortNumber(address)) << "] is already preconfigured, skipping..." << std::endl;
+        }
+        else
+        {
+            std::cout << "[TCP] - Adding address [" << kt::getAddress(address).value_or("") + ":" + std::to_string(kt::getPortNumber(address)) << "] to TCP preconfiguration list for group [" << groupId << "]." << std::endl;
+            tcpPreconfigured.insert(std::make_pair(address, groupId));
         }
     }
 
@@ -110,26 +109,35 @@ namespace forwarder
             try
             {
                 kt::TCPSocket socket = serverSocket.acceptTCPConnection(10000); // microseconds
-                std::string firstMessage = socket.receiveAmount(maxReadInSize);
-
                 std::string addressString = kt::getAddress(socket.getSocketAddress()).value_or("") + ":" + std::to_string(kt::getPortNumber(socket.getSocketAddress()));
-                std::cout << "[TCP] - Accepted new connection from [" << addressString << "] and read message of size [" << firstMessage.size() << "].\n";
 
-                if (debug)
-                {   
-                    std::cout << "[TCP] - Accepted connection message: " << firstMessage << "\n";
-                }
-
-                if (firstMessage.rfind(newClientPrefix, 0) == 0)
+                auto preConfiguredAddress = tcpPreconfigured.find(socket.getSocketAddress());
+                if (preConfiguredAddress != tcpPreconfigured.end())
                 {
-                    std::string groupId = firstMessage.substr(newClientPrefix.size());
-                    addSocketToTCPGroup(groupId, socket);
+                    std::cout << "[TCP] - Accepted connection to pre-configured address [" << addressString << "] adding to group [" << preConfiguredAddress->second << "]." << std::endl;
+                    addSocketToTCPGroup(preConfiguredAddress->second, socket);
                 }
                 else
                 {
-                    // First message does not start with prefix, just close connection
-                    std::cout << "[TCP] - First message from address [" << addressString << "] did not start with prefix: [" << newClientPrefix << "]. Closing connection.\n";
-                    socket.close();
+                    std::string firstMessage = socket.receiveAmount(maxReadInSize);
+                    std::cout << "[TCP] - Accepted new connection from [" << addressString << "] and read message of size [" << firstMessage.size() << "].\n";
+
+                    if (debug)
+                    {   
+                        std::cout << "[TCP] - Accepted connection message: " << firstMessage << "\n";
+                    }
+
+                    if (firstMessage.rfind(newClientPrefix, 0) == 0)
+                    {
+                        std::string groupId = firstMessage.substr(newClientPrefix.size());
+                        addSocketToTCPGroup(groupId, socket);
+                    }
+                    else
+                    {
+                        // First message does not start with prefix, just close connection
+                        std::cout << "[TCP] - First message from address [" << addressString << "] did not start with prefix: [" << newClientPrefix << "]. Closing connection.\n";
+                        socket.close();
+                    }
                 }
             }
             catch(kt::TimeoutException e)

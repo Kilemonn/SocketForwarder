@@ -48,7 +48,7 @@ int main(int argc, char** argv)
         {
             for (const kt::SocketAddress& addr : it.second)
             {
-                forwarder.addAddressToTCPGroup(it.first, addr);
+                forwarder.preConfigureTCPAddress(it.first, addr);
             }
         }
     }
