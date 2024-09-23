@@ -28,7 +28,7 @@ namespace forwarder
         }
         catch(const kt::BindingException e)
         {
-            std::cout << "[TCP] - Failed to bind server socket on port: " << portNumber << ". " << e.what() << std::endl;
+            std::cout << "[TCP] - Failed to bind server socket on port [" << portNumber << "]. " << e.what() << std::endl;
             return std::nullopt;
         }
         catch (const kt::SocketException e)
@@ -56,14 +56,14 @@ namespace forwarder
             kt::UDPSocket udpSocket;
             if (!udpSocket.bind(getEnvironmentVariableValueOrDefault(HOST_ADDRESS, HOST_ADDRESS_DEFAULT), portNumber).first)
             {
-                std::cout << "[UDP] - Failed to bind to provided port " << portNumber << "\n";
+                std::cout << "[UDP] - Failed to bind to provided port [" << portNumber << "].\n";
                 return std::nullopt;
             }
             return std::make_optional(udpSocket);
         }
         catch(const kt::BindingException e)
         {
-            std::cout << "[UDP] - Failed to bind UDP socket on port: " << portNumber << ". " << e.what() << std::endl;
+            std::cout << "[UDP] - Failed to bind UDP socket on port: [" << portNumber << "]. " << e.what() << std::endl;
             return std::nullopt;
         }
         catch (const kt::SocketException e)
