@@ -20,8 +20,10 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 set(FORWARDER_TEST_SOURCE
-    socket-forwarder/TCPSocketForwarderTest.cpp
-    socket-forwarder/UDPSocketForwarderTest.cpp
+    socket-forwarder/forwarder/TCPSocketForwarderTest.cpp
+    socket-forwarder/forwarder/UDPSocketForwarderTest.cpp
+
+    socket-forwarder/sockets/SocketsTest.cpp
 )
 
 # This is duplicated from the parent CMakeLists.txt, since these are needed to build the tests
