@@ -32,7 +32,7 @@ The environment variables that can be provided are as follows:
 
 ---
 
-#### socketforwarder.tcp_port
+#### socketforwarder.tcp.port
 
 *If not provided the TCP forwarder will not run.*
 
@@ -40,7 +40,7 @@ This is the port that the TCP forwarder will listen on for new connections to jo
 
 ---
 
-#### socketforwarder.udp_port
+#### socketforwarder.udp.port
 
 *If not provided the UDP forwarder will not run.*
 
@@ -88,5 +88,15 @@ This will enable more logging of messages received, timing taken to forward and 
 *If not provided the value "0.0.0.0" is used.*
 
 This will be the address that the application binds to for both TCP and UDP.
+
+---
+
+#### socketforwarder.tcp.preconfig_addresses
+
+
+---
+
+#### socketforwarder.udp.preconfig_addresses
+
 
 ---
