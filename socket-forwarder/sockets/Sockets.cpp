@@ -84,7 +84,7 @@ namespace forwarder
         for (const std::string& s : addressStrings)
         {
             std::vector<std::string> parts = split(s, ":");
-            if (parts.size() == 1 && parts[0] == "")
+            if (parts.size() == 1 && parts[0].empty())
             {
                 // Skip
             }
@@ -138,7 +138,7 @@ namespace forwarder
         for (const std::string& s : addressStrings)
         {
             std::vector<std::string> parts = split(s, ":");
-            if (parts.size() == 1 && parts[0] == "")
+            if (parts.size() == 1 && parts[0].empty())
             {
                 // Skip
             }
