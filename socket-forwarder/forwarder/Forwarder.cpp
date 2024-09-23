@@ -124,7 +124,7 @@ namespace forwarder
 
                     if (debug)
                     {   
-                        std::cout << "[TCP] - Accepted connection message: " << firstMessage << "\n";
+                        std::cout << "[TCP] - Accepted connection message: [" << firstMessage << "]\n";
                     }
 
                     if (firstMessage.rfind(newClientPrefix, 0) == 0)
@@ -191,7 +191,7 @@ namespace forwarder
                                 {
                                     if (debug)
                                     {
-                                        std::cout << "[TCP - " + uuidString + "] - Group [" << groupID << "], peer [" << j << "] is no longer connected, removing from group.\n";
+                                        std::cout << "[TCP - " + uuidString + "] - Group [" << groupID << "], peer [" << j << "] is no longer connected, marking for removal from group.\n";
                                     }
                                     toRemove.push_back(j);
                                 }
@@ -208,7 +208,7 @@ namespace forwarder
                                     {
                                         if (debug)
                                         {
-                                            std::cout << "[TCP - " + uuidString + "] - Group [" << groupID << "], failed to send to peer [" << j << "], removing from group.\n";
+                                            std::cout << "[TCP - " + uuidString + "] - Group [" << groupID << "], failed to send to peer [" << j << "], marking for removal from group.\n";
                                         }
                                         toRemove.push_back(j);
                                     }
@@ -224,6 +224,7 @@ namespace forwarder
                         for (size_t index : toRemove)
                         {
                             std::vector<kt::TCPSocket>::iterator socketPosition = std::next(it->second.begin(), index);
+                            std::cout << "[TCP - " + uuidString + "] - Group [" << groupID << "] - Closing and removing socket with address [" << kt::getAddress(socketPosition->getSocketAddress()).value_or("") + ":" + std::to_string(kt::getPortNumber(socketPosition->getSocketAddress())) << "].\n";
                             socketPosition->close();
                             it->second.erase(socketPosition);
                         }
