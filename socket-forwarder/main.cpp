@@ -9,12 +9,17 @@
 #include "environment/Environment.h"
 #include "forwarder/Forwarder.h"
 
+#include <log4cxx/logger.h>
+#include <log4cxx/basicconfigurator.h>
+
 // Make sure version of built image matches
 const std::string VERSION = "0.3.0";
 
 int main(int argc, char** argv)
 {
-    std::cout << "Running SocketForwarder v" << VERSION << std::endl;
+    auto logger = log4cxx::Logger::getLogger("SocketForwarder");
+
+    LOG4CXX_INFO(logger, "Running SocketForwarder v" + VERSION);
 
     const std::string newClientPrefix = forwarder::getEnvironmentVariableValueOrDefault(forwarder::NEW_CLIENT_PREFIX, forwarder::NEW_CLIENT_PREFIX_DEFAULT);
     const unsigned short maxReadInSize = std::atoi(forwarder::getEnvironmentVariableValueOrDefault(forwarder::MAX_READ_IN_SIZE, std::to_string(forwarder::MAX_READ_IN_DEFAULT)).c_str());

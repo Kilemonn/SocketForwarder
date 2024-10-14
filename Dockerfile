@@ -16,7 +16,7 @@ WORKDIR /builder
 # For alpine linux
 # RUN apk update && apk upgrade && apk add g++ cmake make git bluez-dev glib-dev bluez gdb
 
-RUN apt update && apt install g++ cmake make git libbluetooth-dev libglib2.0-dev bluez gdb uuid-dev -y
+RUN apt update && apt install g++ cmake make git libbluetooth-dev libglib2.0-dev bluez gdb uuid-dev libapr1-dev libaprutil1-dev zip -y
 
 COPY ./socket-forwarder ./socket-forwarder
 COPY ./tests ./tests
