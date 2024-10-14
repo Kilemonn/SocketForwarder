@@ -13,7 +13,7 @@
 #include <log4cxx/basicconfigurator.h>
 
 // Make sure version of built image matches
-const std::string VERSION = "0.3.0";
+const std::string VERSION = "0.4.0";
 
 int main(int argc, char** argv)
 {
