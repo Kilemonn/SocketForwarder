@@ -22,17 +22,14 @@ namespace forwarder
 
         if (tcpSessions.find(groupId) == tcpSessions.end())
         {
-            std::cout << "[TCP] - Creating new group with ID [" << groupId << "], adding address [" << addressString << "] to group.\n";
+            LOG4CXX_INFO(logger, "[TCP] - Creating new group with ID [" << groupId << "], adding address [" << addressString << "] to group.");
             // No existing groups with this ID, creating new
             std::vector<kt::TCPSocket> sockets = { socket };
             tcpSessions.insert(std::make_pair(groupId, sockets));
         }
         else
         {
-            if (debug)
-            {
-                std::cout << "[TCP] - Adding new connection [" << addressString << "] to group [" << groupId << "].\n";
-            }
+            LOG4CXX_DEBUG(logger, "[TCP] - Adding new connection [" << addressString << "] to group [" << groupId << "].");
             tcpSessions[groupId].push_back(socket);
         }
     }
@@ -41,11 +38,11 @@ namespace forwarder
     {
         if (tcpPreconfigured.find(address) != tcpPreconfigured.end())
         {
-            std::cout << "[TCP] - Address [" << kt::getAddress(address).value_or("") + ":" + std::to_string(kt::getPortNumber(address)) << "] is already preconfigured, skipping..." << std::endl;
+            LOG4CXX_INFO(logger, "[TCP] - Address [" << kt::getAddress(address).value_or("") + ":" + std::to_string(kt::getPortNumber(address)) << "] is already preconfigured, skipping...");
         }
         else
         {
-            std::cout << "[TCP] - Adding address [" << kt::getAddress(address).value_or("") + ":" + std::to_string(kt::getPortNumber(address)) << "] to TCP preconfiguration list for group [" << groupId << "]." << std::endl;
+            LOG4CXX_INFO(logger, "[TCP] - Adding address [" << kt::getAddress(address).value_or("") + ":" + std::to_string(kt::getPortNumber(address)) << "] to TCP preconfiguration list for group [" << groupId << "].");
             tcpPreconfigured.insert(std::make_pair(address, groupId));
         }
     }
@@ -59,29 +56,29 @@ namespace forwarder
     {
         if (tcpServerSocket.has_value())
         {
-            std::cout << "[TCP] - Running TCP forwarder on port [" << tcpServerSocket->getPort() << "]" << std::endl;
+            LOG4CXX_INFO(logger, "[TCP] - Running TCP forwarder on port [" << tcpServerSocket->getPort() << "]");
             startTCPForwarder();
         }
         else
         {
-            std::cout << "[TCP] - No TCP socket was provided, TCP forwarding is disabled." << std::endl;
+            LOG4CXX_INFO(logger, "[TCP] - No TCP socket was provided, TCP forwarding is disabled.");
         }
 
         if (udpRecieveSocket.has_value())
         {
             if (udpRecieveSocket->isUdpBound())
             {
-                std::cout << "[UDP] - Running UDP forwarder on port [" << udpRecieveSocket->getListeningPort().value() << "]" << std::endl;
+                LOG4CXX_INFO(logger, "[UDP] - Running UDP forwarder on port [" << udpRecieveSocket->getListeningPort().value() << "]");
                 startUDPForwarder();
             }
             else
             {
-                std::cout << "[UDP] - Provided UDP socket needs to be bound before it is passed into the forwarder. UDP forwarding will be disabled." << std::endl; 
+                LOG4CXX_INFO(logger, "[UDP] - Provided UDP socket needs to be bound before it is passed into the forwarder. UDP forwarding will be disabled."); 
             }
         }
         else
         {
-            std::cout << "[UDP] - No UDP socket was provided, UDP forwarding is disabled." << std::endl;
+            LOG4CXX_INFO(logger, "[UDP] - No UDP socket was provided, UDP forwarding is disabled.");
         }
     }
 
@@ -103,7 +100,7 @@ namespace forwarder
     {
         kt::ServerSocket& serverSocket = tcpServerSocket.value();
 
-        std::cout << "[TCP] - Starting TCP connection listener..." << std::endl;
+        LOG4CXX_INFO(logger, "[TCP] - Starting TCP connection listener...");
         while(forwarderIsRunning)
         {
             try
@@ -114,18 +111,14 @@ namespace forwarder
                 auto preConfiguredAddress = tcpPreconfigured.find(socket.getSocketAddress());
                 if (preConfiguredAddress != tcpPreconfigured.end())
                 {
-                    std::cout << "[TCP] - Accepted connection to pre-configured address [" << addressString << "] adding to group [" << preConfiguredAddress->second << "]." << std::endl;
+                    LOG4CXX_INFO(logger, "[TCP] - Accepted connection to pre-configured address [" << addressString << "] adding to group [" << preConfiguredAddress->second << "].");
                     addSocketToTCPGroup(preConfiguredAddress->second, socket);
                 }
                 else
                 {
                     std::string firstMessage = socket.receiveAmount(maxReadInSize);
-                    std::cout << "[TCP] - Accepted new connection from [" << addressString << "] and read message of size [" << firstMessage.size() << "].\n";
-
-                    if (debug)
-                    {   
-                        std::cout << "[TCP] - Accepted connection message: [" << firstMessage << "]\n";
-                    }
+                    LOG4CXX_INFO(logger, "[TCP] - Accepted new connection from [" << addressString << "] and read message of size [" << firstMessage.size() << "].");
+                    LOG4CXX_DEBUG(logger, "[TCP] - Accepted connection message: [" << firstMessage << "]");
 
                     if (firstMessage.rfind(newClientPrefix, 0) == 0)
                     {
@@ -135,7 +128,7 @@ namespace forwarder
                     else
                     {
                         // First message does not start with prefix, just close connection
-                        std::cout << "[TCP] - First message from address [" << addressString << "] did not start with prefix: [" << newClientPrefix << "]. Closing connection.\n";
+                        LOG4CXX_INFO(logger, "[TCP] - First message from address [" << addressString << "] did not start with prefix: [" << newClientPrefix << "]. Closing connection.");
                         socket.close();
                     }
                 }
@@ -146,10 +139,8 @@ namespace forwarder
             }
             catch(kt::SocketException e)
             {
-                std::cout << "[TCP] - Failed to accept incoming client: " << e.what() << std::endl;
+                LOG4CXX_INFO(logger, "[TCP] - Failed to accept incoming client: " << e.what());
             }
-
-            std::cout << std::flush;
         }
 
         // If we exit the loop, close the server socket
@@ -158,7 +149,7 @@ namespace forwarder
 
     void Forwarder::startTCPDataForwarder()
     {
-        std::cout << "[TCP] - Starting TCP forwarder listener..." << std::endl;
+        LOG4CXX_INFO(logger, "[TCP] - Starting TCP forwarder listener...");
         while (forwarderIsRunning)
         {
             std::vector<size_t> toRemove;
@@ -177,10 +168,8 @@ namespace forwarder
                         }
                         
                         std::string uuidString = getNewUUID();
-                        if (debug)
-                        {
-                            std::cout << "[TCP - " + uuidString + "] - Group [" << groupID << "] with [" << it->second.size() << "] nodes. Received content [" << received << "] from peer [" << i << "] forwarding to other peers...\n";
-                        }
+                        LOG4CXX_DEBUG(logger, "[TCP - " + uuidString + "] - Group [" << groupID << "] with [" << it->second.size() << "] nodes. Received content [" << received << "] from peer [" << i << "] forwarding to other peers...");
+                        
                         std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
                         for (size_t j = 0; j < it->second.size(); j++)
                         {
@@ -189,42 +178,32 @@ namespace forwarder
                                 const kt::TCPSocket& forwardToSocket = it->second[j];
                                 if (!forwardToSocket.connected())
                                 {
-                                    if (debug)
-                                    {
-                                        std::cout << "[TCP - " + uuidString + "] - Group [" << groupID << "], peer [" << j << "] is no longer connected, marking for removal from group.\n";
-                                    }
+                                    LOG4CXX_DEBUG(logger, "[TCP - " + uuidString + "] - Group [" << groupID << "], peer [" << j << "] is no longer connected, marking for removal from group.");
                                     toRemove.push_back(j);
                                 }
                                 else
                                 {
                                     if (forwardToSocket.send(received, MSG_NOSIGNAL).first)
                                     {
-                                        if (debug)
-                                        {
-                                            std::cout << "[TCP - " + uuidString + "] - Group [" << groupID << "], successfully forwarded to peer [" << j << "]\n";
-                                        }
+                                        LOG4CXX_DEBUG(logger, "[TCP - " + uuidString + "] - Group [" << groupID << "], successfully forwarded to peer [" << j << "]");
+
                                     }
                                     else
                                     {
-                                        if (debug)
-                                        {
-                                            std::cout << "[TCP - " + uuidString + "] - Group [" << groupID << "], failed to send to peer [" << j << "], marking for removal from group.\n";
-                                        }
+                                        LOG4CXX_DEBUG(logger, "[TCP - " + uuidString + "] - Group [" << groupID << "], failed to send to peer [" << j << "], marking for removal from group.");
                                         toRemove.push_back(j);
                                     }
                                 }
                             }
                         }
-                        if (debug)
-                        {
-                            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-                            std::cout << "[TCP - " + uuidString + "] - Group [" << groupID << "] took [" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms] to forward message to [" << it->second.size() - 1 << "] peers.\n";
-                        }
+
+                        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+                        LOG4CXX_DEBUG(logger, "[TCP - " + uuidString + "] - Group [" << groupID << "] took [" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms] to forward message to [" << it->second.size() - 1 << "] peers.");
                         
                         for (size_t index : toRemove)
                         {
                             std::vector<kt::TCPSocket>::iterator socketPosition = std::next(it->second.begin(), index);
-                            std::cout << "[TCP - " + uuidString + "] - Group [" << groupID << "] - Closing and removing socket with address [" << kt::getAddress(socketPosition->getSocketAddress()).value_or("") + ":" + std::to_string(kt::getPortNumber(socketPosition->getSocketAddress())) << "].\n";
+                            LOG4CXX_INFO(logger, "[TCP - " + uuidString + "] - Group [" << groupID << "] - Closing and removing socket with address [" << kt::getAddress(socketPosition->getSocketAddress()).value_or("") + ":" + std::to_string(kt::getPortNumber(socketPosition->getSocketAddress())) << "].");
                             socketPosition->close();
                             it->second.erase(socketPosition);
                         }
@@ -273,7 +252,7 @@ namespace forwarder
     {
         kt::UDPSocket& udpSocket = udpRecieveSocket.value();
 
-        std::cout << "[UDP] - Starting UDP forwarder connection listener..." << std::endl;
+        LOG4CXX_INFO(logger, "[UDP] - Starting UDP forwarder connection listener...");
         while (forwarderIsRunning)
         {
             if (udpSocket.ready())
@@ -285,16 +264,13 @@ namespace forwarder
                     std::string addressString = kt::getAddress(result.second.second).value_or("") + ":" + std::to_string(kt::getPortNumber(result.second.second));
                     std::string& message = result.first.value();
 
-                    if (debug)
-                    {
-                        std::cout << "[UDP] - Received message [" << message << "] from address: [" << addressString << "]\n";
-                    }
+                    LOG4CXX_DEBUG(logger, "[UDP] - Received message [" << message << "] from address: [" << addressString << "]");
 
                     // This is a new client, check their first message content
                     if (message.rfind(newClientPrefix, 0) == 0)
                     {
                         std::string recievingPort = message.substr(newClientPrefix.size());
-                        std::cout << "[UDP] - New client joined UDP group from address [" << addressString << "] with request reply port [" << recievingPort << "]\n";
+                        LOG4CXX_INFO(logger, "[UDP] - New client joined UDP group from address [" << addressString << "] with request reply port [" << recievingPort << "]");
 
                         kt::SocketAddress address = result.second.second;
                         address.ipv4.sin_port = htons(std::atoi(recievingPort.c_str()));
@@ -306,14 +282,13 @@ namespace forwarder
                     }
                 }
             }
-            std::cout << std::flush;
         }
         udpSocket.close();
     }
 
     void Forwarder::startUDPDataForwarder()
     {
-        std::cout << "[UDP] - Starting UDP data forwarder listener..." << std::endl;
+        LOG4CXX_INFO(logger, "[UDP] - Starting UDP data forwarder listener...");
         kt::UDPSocket sendSocket;
         while (forwarderIsRunning)
         {
@@ -323,27 +298,18 @@ namespace forwarder
                 std::string message = udpMessageQueue.front();
                 udpMessageQueue.pop();
 
-                if (debug)
-                {
-                    std::cout << "[UDP - " + uuidString + "] - Received message [" << message << "] forwarding to peers.\n";
-                }
+                LOG4CXX_DEBUG(logger, "[UDP - " + uuidString + "] - Received message [" << message << "] forwarding to peers.");
 
                 std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
                 for (const kt::SocketAddress& addr : udpKnownPeers)
                 {
                     std::pair<bool, int> result = sendSocket.sendTo(message, addr);
-                    if (debug)
-                    {
-                        std::cout << "[UDP - " + uuidString + "] - Forwarded to peer with address: [" << kt::getAddress(addr).value_or("") + ":" + std::to_string(kt::getPortNumber(addr)) << "]. With result [" << result.second << "]\n";
-                    }
+                    LOG4CXX_DEBUG(logger, "[UDP - " + uuidString + "] - Forwarded to peer with address: [" << kt::getAddress(addr).value_or("") + ":" + std::to_string(kt::getPortNumber(addr)) << "]. With result [" << result.second << "]");
                 }
 
-                if (debug)
-                {
-                    std::cout << "[UDP - " + uuidString + "] - Forwarded to [" << udpKnownPeers.size() << "] peer(s).\n";
-                    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-                    std::cout << "[UDP - " + uuidString + "] - Took [" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms] to forward message to [" << udpKnownPeers.size() << "] peers.\n";
-                }
+                LOG4CXX_DEBUG(logger, "[UDP - " + uuidString + "] - Forwarded to [" << udpKnownPeers.size() << "] peer(s).");
+                std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+                LOG4CXX_DEBUG(logger, "[UDP - " + uuidString + "] - Took [" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms] to forward message to [" << udpKnownPeers.size() << "] peers.");
             }
             else
             {

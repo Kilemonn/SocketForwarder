@@ -37,6 +37,7 @@ add_executable(${PROJECT_NAME} ${FORWARDER_TEST_SOURCE} ${FORWARDER_SOURCE_FOR_T
 
 target_include_directories(SocketForwarderTests
     PUBLIC ${SOCKET_LIB_SOURCE}/src
+    PUBLIC ${LOG_LIB_SOURCE}/src/main/include
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
@@ -46,6 +47,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     pthread
     uuid
     PUBLIC ${SOCKET_LIB_SOURCE}/libCppSocketLibrary.a
+    PUBLIC ${LOG_LIB_SOURCE}/src/main/cpp/liblog4cxx.so
 )
 
 # Enable unit testing
