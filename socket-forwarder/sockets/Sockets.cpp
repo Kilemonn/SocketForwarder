@@ -32,12 +32,12 @@ namespace forwarder
         }
         catch(const kt::BindingException e)
         {
-            LOG4CXX_INFO(logger, "[TCP] - Failed to bind server socket on port [" << portNumber << "]. " << e.what());
+            LOG4CXX_ERROR(logger, "[TCP] - Failed to bind server socket on port [" << portNumber << "]. " << e.what());
             return std::nullopt;
         }
         catch (const kt::SocketException e)
         {
-            LOG4CXX_INFO(logger, "[TCP] - Failed to create server socket: " << e.what());
+            LOG4CXX_ERROR(logger, "[TCP] - Failed to create server socket: " << e.what());
             return std::nullopt;
         }
     }
@@ -60,19 +60,19 @@ namespace forwarder
             kt::UDPSocket udpSocket;
             if (!udpSocket.bind(getEnvironmentVariableValueOrDefault(HOST_ADDRESS, HOST_ADDRESS_DEFAULT), portNumber).first)
             {
-                LOG4CXX_INFO(logger, "[UDP] - Failed to bind to provided port [" << portNumber << "].");
+                LOG4CXX_ERROR(logger, "[UDP] - Failed to bind to provided port [" << portNumber << "].");
                 return std::nullopt;
             }
             return std::make_optional(udpSocket);
         }
         catch(const kt::BindingException e)
         {
-            LOG4CXX_INFO(logger, "[UDP] - Failed to bind UDP socket on port: [" << portNumber << "]. " << e.what());
+            LOG4CXX_ERROR(logger, "[UDP] - Failed to bind UDP socket on port: [" << portNumber << "]. " << e.what());
             return std::nullopt;
         }
         catch (const kt::SocketException e)
         {
-            LOG4CXX_INFO(logger, "[UDP] - Failed to create UDP socket: " << e.what());
+            LOG4CXX_ERROR(logger, "[UDP] - Failed to create UDP socket: " << e.what());
             return std::nullopt;
         }
     }
@@ -90,7 +90,7 @@ namespace forwarder
             std::vector<std::string> parts = split(s, ":");
             if (parts.size() == 1 && parts[0].empty())
             {
-                // Skip
+                LOG4CXX_WARN(logger, "[TCP] - Skipping processing address with value [" << s << "], expected format to be \"<groupId>:<address>:<port number>\".");
             }
             else if (parts.size() < 3)
             {
@@ -108,7 +108,7 @@ namespace forwarder
                 std::pair<std::vector<kt::SocketAddress>, int> resolvedAddresses = kt::resolveToAddresses(parts[1], portNumber, info);
                 if (resolvedAddresses.first.empty())
                 {
-                    LOG4CXX_INFO(logger, "[TCP] - Failed to resolve address [" << parts[1] << ":" << portNumber << "]. Address will not be added to TCP group [" << parts[0] << "].");
+                    LOG4CXX_ERROR(logger, "[TCP] - Failed to resolve address [" << parts[1] << ":" << portNumber << "]. Address will not be added to TCP group [" << parts[0] << "].");
                 }
                 else
                 {
@@ -144,7 +144,7 @@ namespace forwarder
             std::vector<std::string> parts = split(s, ":");
             if (parts.size() == 1 && parts[0].empty())
             {
-                // Skip
+                LOG4CXX_WARN(logger, "[UDP] - Skipping processing address with value [" << s << "], expected format to be \"<address>:<port number>\".");
             }
             else if (parts.size() < 2)
             {
@@ -162,7 +162,7 @@ namespace forwarder
                 std::pair<std::vector<kt::SocketAddress>, int> resolvedAddresses = kt::resolveToAddresses(parts[0], portNumber, info);
                 if (resolvedAddresses.first.empty())
                 {
-                    LOG4CXX_INFO(logger, "[UDP] - Failed to resolve address [" << parts[0] << ":" << portNumber << "]. Address will not be added to UDP group.");
+                    LOG4CXX_ERROR(logger, "[UDP] - Failed to resolve address [" << parts[0] << ":" << portNumber << "]. Address will not be added to UDP group.");
                 }
                 else
                 {

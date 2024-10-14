@@ -128,7 +128,7 @@ namespace forwarder
                     else
                     {
                         // First message does not start with prefix, just close connection
-                        LOG4CXX_INFO(logger, "[TCP] - First message from address [" << addressString << "] did not start with prefix: [" << newClientPrefix << "]. Closing connection.");
+                        LOG4CXX_ERROR(logger, "[TCP] - First message from address [" << addressString << "] did not start with prefix: [" << newClientPrefix << "]. Closing connection.");
                         socket.close();
                     }
                 }
@@ -139,7 +139,7 @@ namespace forwarder
             }
             catch(kt::SocketException e)
             {
-                LOG4CXX_INFO(logger, "[TCP] - Failed to accept incoming client: " << e.what());
+                LOG4CXX_ERROR(logger, "[TCP] - Failed to accept incoming client: " << e.what());
             }
         }
 
@@ -190,7 +190,7 @@ namespace forwarder
                                     }
                                     else
                                     {
-                                        LOG4CXX_DEBUG(logger, "[TCP - " + uuidString + "] - Group [" << groupID << "], failed to send to peer [" << j << "], marking for removal from group.");
+                                        LOG4CXX_WARN(logger, "[TCP - " + uuidString + "] - Group [" << groupID << "], failed to send to peer [" << j << "], marking for removal from group.");
                                         toRemove.push_back(j);
                                     }
                                 }
