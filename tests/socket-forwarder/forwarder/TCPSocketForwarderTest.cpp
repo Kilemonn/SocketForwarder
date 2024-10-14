@@ -7,6 +7,8 @@
 #include "../../../socket-forwarder/environment/Environment.h"
 #include "../../../socket-forwarder/forwarder/Forwarder.h"
 
+#include <log4cxx/basicconfigurator.h>
+
 using namespace std::chrono_literals;
 
 namespace forwarder
@@ -20,6 +22,7 @@ namespace forwarder
         TCPSocketForwarderTest() : serverSocket(kt::SocketType::Wifi), forwarder(serverSocket, std::nullopt, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT, true) {}
         void SetUp() override
 		{
+			log4cxx::BasicConfigurator::configure();
 			forwarder.start();	
 		}
 

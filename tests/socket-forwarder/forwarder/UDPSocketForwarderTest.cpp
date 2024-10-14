@@ -6,6 +6,8 @@
 #include "../../../socket-forwarder/environment/Environment.h"
 #include "../../../socket-forwarder/forwarder/Forwarder.h"
 
+#include <log4cxx/basicconfigurator.h>
+
 using namespace std::chrono_literals;
 
 namespace forwarder
@@ -25,6 +27,7 @@ namespace forwarder
 
         void SetUp() override
 		{
+            log4cxx::BasicConfigurator::configure();
             ASSERT_NE(forwarder, std::nullopt);
             forwarder->start();
 		}
