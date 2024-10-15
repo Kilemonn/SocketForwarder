@@ -20,9 +20,15 @@ namespace forwarder
 		forwarder::Forwarder forwarder;
     protected:
         TCPSocketForwarderTest() : serverSocket(kt::SocketType::Wifi), forwarder(serverSocket, std::nullopt, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT, true) {}
-        void SetUp() override
+        
+		static void SetUpTestCase()
 		{
+			log4cxx::BasicConfigurator::resetConfiguration();
 			log4cxx::BasicConfigurator::configure();
+		}
+		
+		void SetUp() override
+		{
 			forwarder.start();	
 		}
 

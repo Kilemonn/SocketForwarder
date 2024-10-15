@@ -25,9 +25,14 @@ namespace forwarder
             forwarder = forwarder::Forwarder(std::nullopt, udpSocket, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT, true);
         }
 
+        static void SetUpTestCase()
+		{
+			log4cxx::BasicConfigurator::resetConfiguration();
+			log4cxx::BasicConfigurator::configure();
+		}
+
         void SetUp() override
 		{
-            log4cxx::BasicConfigurator::configure();
             ASSERT_NE(forwarder, std::nullopt);
             forwarder->start();
 		}
