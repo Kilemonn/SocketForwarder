@@ -19,7 +19,7 @@ namespace forwarder
         kt::ServerSocket serverSocket;
 		forwarder::Forwarder forwarder;
     protected:
-        TCPSocketForwarderTest() : serverSocket(kt::SocketType::Wifi), forwarder(serverSocket, std::nullopt, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT, true) {}
+        TCPSocketForwarderTest() : serverSocket(kt::SocketType::Wifi), forwarder(serverSocket, std::nullopt, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT) {}
         
 		static void SetUpTestCase()
 		{

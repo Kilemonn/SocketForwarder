@@ -22,7 +22,7 @@ namespace forwarder
         UDPSocketForwarderTest() : udpSocket()
         {
             udpSocket.bind();
-            forwarder = forwarder::Forwarder(std::nullopt, udpSocket, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT, true);
+            forwarder = forwarder::Forwarder(std::nullopt, udpSocket, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT);
         }
 
         static void SetUpTestCase()

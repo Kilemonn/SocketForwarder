@@ -65,7 +65,7 @@ namespace forwarder
         void addSocketToTCPGroup(const std::string&, kt::TCPSocket);
 
     public:
-        Forwarder(std::optional<kt::ServerSocket>, std::optional<kt::UDPSocket>, const std::string, const unsigned short, const bool);
+        Forwarder(std::optional<kt::ServerSocket>, std::optional<kt::UDPSocket>, const std::string, const unsigned short);
 
         void preConfigureTCPAddress(const std::string&, kt::SocketAddress);
         void addAddressToUDPGroup(kt::SocketAddress);
