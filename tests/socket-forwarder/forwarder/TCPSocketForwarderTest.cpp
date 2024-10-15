@@ -25,6 +25,7 @@ namespace forwarder
 		{
 			log4cxx::BasicConfigurator::resetConfiguration();
 			log4cxx::BasicConfigurator::configure();
+			log4cxx::Logger::getRootLogger()->setLevel(log4cxx::Level::getDebug());
 		}
 		
 		void SetUp() override
