@@ -48,7 +48,6 @@ namespace forwarder
         bool forwarderIsRunning = false;
         std::string newClientPrefix;
         unsigned short maxReadInSize;
-        bool debug = false;
 
         std::optional<kt::UDPSocket> udpRecieveSocket = std::nullopt;
         std::optional<kt::ServerSocket> tcpServerSocket = std::nullopt;

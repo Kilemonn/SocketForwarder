@@ -12,8 +12,8 @@
 
 namespace forwarder
 {
-    Forwarder::Forwarder(std::optional<kt::ServerSocket> tcpSocket, std::optional<kt::UDPSocket> udpSocket, const std::string prefix, const unsigned short maxRead, const bool debugFlag):
-        tcpServerSocket(tcpSocket), udpRecieveSocket(udpSocket), newClientPrefix(prefix), maxReadInSize(maxRead), debug(debugFlag)
+    Forwarder::Forwarder(std::optional<kt::ServerSocket> tcpSocket, std::optional<kt::UDPSocket> udpSocket, const std::string prefix, const unsigned short maxRead):
+        tcpServerSocket(tcpSocket), udpRecieveSocket(udpSocket), newClientPrefix(prefix), maxReadInSize(maxRead)
     { }
 
     void Forwarder::addSocketToTCPGroup(const std::string& groupId, kt::TCPSocket socket)
