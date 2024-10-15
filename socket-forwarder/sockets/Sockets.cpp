@@ -90,7 +90,7 @@ namespace forwarder
             std::vector<std::string> parts = split(s, ":");
             if (parts.size() == 1 && parts[0].empty())
             {
-                LOG4CXX_WARN(logger, "[TCP] - Skipping processing address with value [" << s << "], expected format to be \"<groupId>:<address>:<port number>\".");
+                // Don't even log since its empty
             }
             else if (parts.size() < 3)
             {
@@ -144,7 +144,7 @@ namespace forwarder
             std::vector<std::string> parts = split(s, ":");
             if (parts.size() == 1 && parts[0].empty())
             {
-                LOG4CXX_WARN(logger, "[UDP] - Skipping processing address with value [" << s << "], expected format to be \"<address>:<port number>\".");
+                // Don't even log since its empty
             }
             else if (parts.size() < 2)
             {
