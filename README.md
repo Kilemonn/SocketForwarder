@@ -1,6 +1,8 @@
 # SocketForwarder
 A TCP and UDP forwarder that creates common sessions and forwards incoming packets to all sockets registered for that session.
 
+Please review the [Wiki](https://github.com/Kilemonn/SocketForwarder/wiki) for more specific argument and configuration notes.
+
 ## Quick Start
 
 ### From Command-line
@@ -28,6 +30,8 @@ Image available at: https://hub.docker.com/r/kilemon/socket-forwarder
 **Make sure you `EXPOSE` the required ports that you wish to use as listener ports. By default the image exposes no ports.**
 
 Running the container allows you to customise the forwarder in specific ways as per the environment variables that you provide on startup to the application.
+
+Please see the [Wiki](https://github.com/Kilemonn/SocketForwarder/wiki) for more detail on the arguments and configuration options.
 The environment variables that can be provided are as follows:
 
 ---
@@ -107,46 +111,5 @@ Since the UDP forwarder cannot detect disconnections through UDP, any address ad
 
 The format for this is a comma separated list of "hostname:port".
 E.g. `"localhost:65432,localhost:44321"`
-
----
-
-## Logging
-
-By default the application only outputs logs to stdout.
-The underlying logging library is `log4cxx`, so if you want logs to be saved to a log file you will need to provide a `log4cxx.properties` file.
-
-Because the application already has the console appender configured, you only need to configure your required file appenders here.
-An example is here (change the root log level and file log level as required):
-
-```
-# Root log level + adding file appender
-log4j.rootLogger=INFO,file
-
-# File appender configuration
-log4j.appender.file=org.apache.log4j.RollingFileAppender
-log4j.appender.file.File=socket-forwarder.log
-log4j.appender.file.MaxFileSize=100KB
-log4j.appender.file.MaxBackupIndex=1
-log4j.appender.file.layout=org.apache.log4j.PatternLayout
-log4j.appender.file.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss} [%-5p] %m%n
-log4j.appender.file.threshold=INFO
-```
-
-This then needs to be added into the container at the following directory: `/socket-forwarder` and the appropriate environment variable outlining the properties file needs to be defined.
-
-An example docker file is as follows:
-
-```dockerfile
-FROM kilemon/socket-forwarder:latest
-
-# Copy in properties file into same directory as the executable
-COPY log.properties /socket-forwarder/log.properties
-
-# Since the properties file name is not `log4cxx.properties` you need to specify the configuration file in the environment variable
-ENV log4j.configuration=/socket-forwarder/log.properties
-
-# TCP listening port
-EXPOSE 34765/tcp
-```
 
 ---
