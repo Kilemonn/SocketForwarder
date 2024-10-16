@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(PROJECT_NAME SocketForwarder)
 
-project(${PROJECT_NAME} VERSION 0.1.1)
+project(${PROJECT_NAME} VERSION 0.4.0)
 
 ExternalProject_Add(CppSocketLibrary
     GIT_REPOSITORY https://github.com/Kilemonn/Cpp-SocketLibrary.git
@@ -19,21 +19,26 @@ ExternalProject_Add(CppSocketLibrary
 ExternalProject_Get_Property(CppSocketLibrary SOURCE_DIR)
 set(SOCKET_LIB_SOURCE ${SOURCE_DIR})
 
+find_package(log4cxx REQUIRED)
+
 set(FORWARDER_SOURCE
     socket-forwarder/main.cpp
     socket-forwarder/environment/Environment.cpp
     socket-forwarder/forwarder/Forwarder.cpp
     socket-forwarder/sockets/Sockets.cpp
+    socket-forwarder/logger/Logger.cpp
 )
 
 add_executable(SocketForwarder ${FORWARDER_SOURCE})
 
 target_include_directories(SocketForwarder
     PUBLIC ${SOCKET_LIB_SOURCE}/src
+    ${LOG4CXX_INCLUDE_DIRS}
 )
 
 target_link_libraries(SocketForwarder 
     PUBLIC ${SOCKET_LIB_SOURCE}/libCppSocketLibrary.a
+    PRIVATE log4cxx
     pthread
     bluetooth
     uuid

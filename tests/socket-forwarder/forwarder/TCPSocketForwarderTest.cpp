@@ -6,6 +6,9 @@
 
 #include "../../../socket-forwarder/environment/Environment.h"
 #include "../../../socket-forwarder/forwarder/Forwarder.h"
+#include "../../../socket-forwarder/logger/Logger.h"
+
+#include <log4cxx/basicconfigurator.h>
 
 using namespace std::chrono_literals;
 
@@ -17,8 +20,16 @@ namespace forwarder
         kt::ServerSocket serverSocket;
 		forwarder::Forwarder forwarder;
     protected:
-        TCPSocketForwarderTest() : serverSocket(kt::SocketType::Wifi), forwarder(serverSocket, std::nullopt, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT, true) {}
-        void SetUp() override
+        TCPSocketForwarderTest() : serverSocket(kt::SocketType::Wifi), forwarder(serverSocket, std::nullopt, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT) {}
+        
+		static void SetUpTestCase()
+		{
+			log4cxx::BasicConfigurator::resetConfiguration();
+			forwarder::initialiseConsoleLogger();
+			log4cxx::Logger::getRootLogger()->setLevel(log4cxx::Level::getDebug());
+		}
+		
+		void SetUp() override
 		{
 			forwarder.start();	
 		}

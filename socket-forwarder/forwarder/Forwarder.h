@@ -11,8 +11,11 @@
 #include <socket/TCPSocket.h>
 #include <socket/UDPSocket.h>
 
+#include <log4cxx/logger.h>
+
 namespace forwarder
 {
+
     class Forwarder
     {
     protected:
@@ -41,10 +44,10 @@ namespace forwarder
         std::optional<std::pair<std::thread, std::thread>> tcpRunningThreads = std::nullopt;
         std::optional<std::pair<std::thread, std::thread>> udpRunningThreads = std::nullopt;
 
+        log4cxx::LoggerPtr logger = log4cxx::Logger::getLogger("Forwarder");
         bool forwarderIsRunning = false;
         std::string newClientPrefix;
         unsigned short maxReadInSize;
-        bool debug = false;
 
         std::optional<kt::UDPSocket> udpRecieveSocket = std::nullopt;
         std::optional<kt::ServerSocket> tcpServerSocket = std::nullopt;
@@ -62,7 +65,7 @@ namespace forwarder
         void addSocketToTCPGroup(const std::string&, kt::TCPSocket);
 
     public:
-        Forwarder(std::optional<kt::ServerSocket>, std::optional<kt::UDPSocket>, const std::string, const unsigned short, const bool);
+        Forwarder(std::optional<kt::ServerSocket>, std::optional<kt::UDPSocket>, const std::string, const unsigned short);
 
         void preConfigureTCPAddress(const std::string&, kt::SocketAddress);
         void addAddressToUDPGroup(kt::SocketAddress);

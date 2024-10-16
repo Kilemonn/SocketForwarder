@@ -6,15 +6,19 @@
 #include "../environment/Environment.h"
 #include "Sockets.h"
 
+#include <log4cxx/logger.h>
+
 namespace forwarder
 {
+    auto logger = log4cxx::Logger::getLogger("SocketForwarder");
+
     std::optional<kt::ServerSocket> setUpTcpServerSocket(std::optional<std::string> defaultPort)
     {
         std::optional<std::string> tcpPort = forwarder::getEnvironmentVariableValue(forwarder::TCP_PORT);
 
         if (!tcpPort.has_value() && !defaultPort.has_value())
         {
-            std::cout << "Skipping TCP socket creation since value for [" + forwarder::TCP_PORT + "] was not provided." << std::endl;
+            LOG4CXX_INFO(logger, "Skipping TCP socket creation since value for [" + forwarder::TCP_PORT + "] was not provided.");
             return std::nullopt;
         }
 
@@ -28,12 +32,12 @@ namespace forwarder
         }
         catch(const kt::BindingException e)
         {
-            std::cout << "[TCP] - Failed to bind server socket on port [" << portNumber << "]. " << e.what() << std::endl;
+            LOG4CXX_ERROR(logger, "[TCP] - Failed to bind server socket on port [" << portNumber << "]. " << e.what());
             return std::nullopt;
         }
         catch (const kt::SocketException e)
         {
-            std::cout << "[TCP] - Failed to create server socket: " << e.what() << std::endl;
+            LOG4CXX_ERROR(logger, "[TCP] - Failed to create server socket: " << e.what());
             return std::nullopt;
         }
     }
@@ -44,7 +48,7 @@ namespace forwarder
 
         if (!udpPort.has_value() && !defaultPort.has_value())
         {
-            std::cout << "Skipping UDP socket creation since value for [" + forwarder::UDP_PORT + "] was not provided." << std::endl;
+            LOG4CXX_INFO(logger, "Skipping UDP socket creation since value for [" + forwarder::UDP_PORT + "] was not provided.");
             return std::nullopt;
         }
 
@@ -56,19 +60,19 @@ namespace forwarder
             kt::UDPSocket udpSocket;
             if (!udpSocket.bind(getEnvironmentVariableValueOrDefault(HOST_ADDRESS, HOST_ADDRESS_DEFAULT), portNumber).first)
             {
-                std::cout << "[UDP] - Failed to bind to provided port [" << portNumber << "].\n";
+                LOG4CXX_ERROR(logger, "[UDP] - Failed to bind to provided port [" << portNumber << "].");
                 return std::nullopt;
             }
             return std::make_optional(udpSocket);
         }
         catch(const kt::BindingException e)
         {
-            std::cout << "[UDP] - Failed to bind UDP socket on port: [" << portNumber << "]. " << e.what() << std::endl;
+            LOG4CXX_ERROR(logger, "[UDP] - Failed to bind UDP socket on port: [" << portNumber << "]. " << e.what());
             return std::nullopt;
         }
         catch (const kt::SocketException e)
         {
-            std::cout << "[UDP] - Failed to create UDP socket: " << e.what() << std::endl;
+            LOG4CXX_ERROR(logger, "[UDP] - Failed to create UDP socket: " << e.what());
             return std::nullopt;
         }
     }
@@ -86,17 +90,17 @@ namespace forwarder
             std::vector<std::string> parts = split(s, ":");
             if (parts.size() == 1 && parts[0].empty())
             {
-                // Skip
+                // Don't even log since its empty
             }
             else if (parts.size() < 3)
             {
-                std::cout << "[TCP] - Unable to add address [" << s << "], expected format to be \"<groupId>:<address>:<port number>\"." << std::endl;
+                LOG4CXX_INFO(logger, "[TCP] - Unable to add address [" << s << "], expected format to be \"<groupId>:<address>:<port number>\".");
             }
             else
             {
                 if (parts.size() > 3)
                 {
-                    std::cout << "[TCP] - Multiple ':' provided in address string [" << s << "]. Attempting to parse and add address to group [" << parts[0] << "] using second and third elements as the address [" << parts[1] << ", " << parts[2] << "]." << std::endl;
+                    LOG4CXX_INFO(logger, "[TCP] - Multiple ':' provided in address string [" << s << "]. Attempting to parse and add address to group [" << parts[0] << "] using second and third elements as the address [" << parts[1] << ", " << parts[2] << "].");
                 }
 
                 unsigned short portNumber = static_cast<unsigned short>(std::atoi(parts[2].c_str()));
@@ -104,12 +108,12 @@ namespace forwarder
                 std::pair<std::vector<kt::SocketAddress>, int> resolvedAddresses = kt::resolveToAddresses(parts[1], portNumber, info);
                 if (resolvedAddresses.first.empty())
                 {
-                    std::cout << "[TCP] - Failed to resolve address [" << parts[1] << ":" << portNumber << "]. Address will not be added to TCP group [" << parts[0] << "]." << std::endl;
+                    LOG4CXX_ERROR(logger, "[TCP] - Failed to resolve address [" << parts[1] << ":" << portNumber << "]. Address will not be added to TCP group [" << parts[0] << "].");
                 }
                 else
                 {
                     kt::SocketAddress addr = resolvedAddresses.first.at(0);
-                    std::cout << "[TCP] - Resolved and added pre-configured address [" << kt::getAddress(addr).value_or("") + ":" + std::to_string(kt::getPortNumber(addr)) << "] to group [" << parts[0] << "]." << std::endl;
+                    LOG4CXX_INFO(logger, "[TCP] - Resolved and added pre-configured address [" << kt::getAddress(addr).value_or("") + ":" + std::to_string(kt::getPortNumber(addr)) << "] to group [" << parts[0] << "].");
 
                     if (addresses.find(parts[0]) == addresses.end())
                     {
@@ -140,17 +144,17 @@ namespace forwarder
             std::vector<std::string> parts = split(s, ":");
             if (parts.size() == 1 && parts[0].empty())
             {
-                // Skip
+                // Don't even log since its empty
             }
             else if (parts.size() < 2)
             {
-                std::cout << "[UDP] - Unable to add address [" << s << "], expected format to be \"<address>:<port number>\"." << std::endl;
+                LOG4CXX_INFO(logger, "[UDP] - Unable to add address [" << s << "], expected format to be \"<address>:<port number>\".");
             }
             else
             {
                 if (parts.size() > 2)
                 {
-                    std::cout << "[UDP] - Multiple ':' provided in address string [" << s << "]. Attempting to parse as address using first two elements [" << parts[0] << ", " << parts[1] << "]." << std::endl;
+                    LOG4CXX_INFO(logger, "[UDP] - Multiple ':' provided in address string [" << s << "]. Attempting to parse as address using first two elements [" << parts[0] << ", " << parts[1] << "].");
                 }
 
                 unsigned short portNumber = static_cast<unsigned short>(std::atoi(parts[1].c_str()));
@@ -158,12 +162,12 @@ namespace forwarder
                 std::pair<std::vector<kt::SocketAddress>, int> resolvedAddresses = kt::resolveToAddresses(parts[0], portNumber, info);
                 if (resolvedAddresses.first.empty())
                 {
-                    std::cout << "[UDP] - Failed to resolve address [" << parts[0] << ":" << portNumber << "]. Address will not be added to UDP group." << std::endl;
+                    LOG4CXX_ERROR(logger, "[UDP] - Failed to resolve address [" << parts[0] << ":" << portNumber << "]. Address will not be added to UDP group.");
                 }
                 else
                 {
                     kt::SocketAddress addr = resolvedAddresses.first.at(0);
-                    std::cout << "[UDP] - Resolved and added pre-configured address [" << kt::getAddress(addr).value_or("") + ":" + std::to_string(kt::getPortNumber(addr)) << "] to UDP group." << std::endl;
+                    LOG4CXX_INFO(logger, "[UDP] - Resolved and added pre-configured address [" << kt::getAddress(addr).value_or("") + ":" + std::to_string(kt::getPortNumber(addr)) << "] to UDP group.");
                     addresses.push_back(addr);
                 }
             }

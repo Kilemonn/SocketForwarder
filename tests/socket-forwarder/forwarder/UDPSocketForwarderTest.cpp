@@ -5,6 +5,9 @@
 
 #include "../../../socket-forwarder/environment/Environment.h"
 #include "../../../socket-forwarder/forwarder/Forwarder.h"
+#include "../../../socket-forwarder/logger/Logger.h"
+
+#include <log4cxx/basicconfigurator.h>
 
 using namespace std::chrono_literals;
 
@@ -20,8 +23,15 @@ namespace forwarder
         UDPSocketForwarderTest() : udpSocket()
         {
             udpSocket.bind();
-            forwarder = forwarder::Forwarder(std::nullopt, udpSocket, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT, true);
+            forwarder = forwarder::Forwarder(std::nullopt, udpSocket, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT);
         }
+
+        static void SetUpTestCase()
+		{
+			log4cxx::BasicConfigurator::resetConfiguration();
+			forwarder::initialiseConsoleLogger();
+            log4cxx::Logger::getRootLogger()->setLevel(log4cxx::Level::getDebug());
+		}
 
         void SetUp() override
 		{
@@ -119,7 +129,7 @@ namespace forwarder
             }
         }
 
-        std::cout << "UDP - Test - Received messages [" << receivedMessageCount << "/" << messagesToReceive * (endIndex - startIndex) << "] [~" << (static_cast<double>(receivedMessageCount) / static_cast<double>((messagesToReceive * (endIndex - startIndex)))) * 100 << "%] from forwarder->\n";
+        std::cout << "UDP - Test - Received messages [" << receivedMessageCount << "/" << messagesToReceive * (endIndex - startIndex) << "] [~" << (static_cast<double>(receivedMessageCount) / static_cast<double>((messagesToReceive * (endIndex - startIndex)))) * 100 << "%] from forwarder." << std::endl;
     }
 
     /**
@@ -208,7 +218,7 @@ namespace forwarder
             socket.close();
         }
 
-        std::cout << "UDP - Test - Received messages [" << receivedMessageCount << "/" << messagesToSend * amountOfClients << "] [~" << (static_cast<double>(receivedMessageCount) / static_cast<double>((messagesToSend * amountOfClients))) * 100 << "%] from forwarder->\n";
+        std::cout << "UDP - Test - Received messages [" << receivedMessageCount << "/" << messagesToSend * amountOfClients << "] [~" << (static_cast<double>(receivedMessageCount) / static_cast<double>((messagesToSend * amountOfClients))) * 100 << "%] from forwarder." << std::endl;
         
         // We cannot assert this since there can be messages that are lost or dropped because of the use of UDP
         // ASSERT_EQ(messagesToSend * amountOfClients, receivedMessageCount);

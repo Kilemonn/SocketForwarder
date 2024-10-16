@@ -31,12 +31,14 @@ set(FORWARDER_SOURCE_FOR_TEST
     ../socket-forwarder/environment/Environment.cpp
     ../socket-forwarder/forwarder/Forwarder.cpp
     ../socket-forwarder/sockets/Sockets.cpp
+    ../socket-forwarder/logger/Logger.cpp
 )
 
 add_executable(${PROJECT_NAME} ${FORWARDER_TEST_SOURCE} ${FORWARDER_SOURCE_FOR_TEST})
 
 target_include_directories(SocketForwarderTests
     PUBLIC ${SOCKET_LIB_SOURCE}/src
+    ${LOG4CXX_INCLUDE_DIRS}
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
@@ -46,6 +48,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     pthread
     uuid
     PUBLIC ${SOCKET_LIB_SOURCE}/libCppSocketLibrary.a
+    PRIVATE log4cxx
 )
 
 # Enable unit testing
