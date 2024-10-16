@@ -44,7 +44,7 @@ namespace forwarder
         std::optional<std::pair<std::thread, std::thread>> tcpRunningThreads = std::nullopt;
         std::optional<std::pair<std::thread, std::thread>> udpRunningThreads = std::nullopt;
 
-        log4cxx::LoggerPtr logger = log4cxx::Logger::getLogger("SocketForwarder");
+        log4cxx::LoggerPtr logger = log4cxx::Logger::getLogger("Forwarder");
         bool forwarderIsRunning = false;
         std::string newClientPrefix;
         unsigned short maxReadInSize;

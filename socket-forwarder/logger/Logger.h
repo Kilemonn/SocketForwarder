@@ -1,0 +1,5 @@
+
+namespace forwarder
+{
+    void initialiseConsoleLogger();
+}

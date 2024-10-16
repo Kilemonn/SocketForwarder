@@ -8,18 +8,17 @@
 #include "sockets/Sockets.h"
 #include "environment/Environment.h"
 #include "forwarder/Forwarder.h"
+#include "logger/Logger.h"
 
-#include <log4cxx/logger.h>
-#include <log4cxx/basicconfigurator.h>
 
 // Make sure version of built image matches
 const std::string VERSION = "0.4.0";
 
 int main(int argc, char** argv)
 {
-    log4cxx::BasicConfigurator::configure();
+    forwarder::initialiseConsoleLogger();
 
-    auto logger = log4cxx::Logger::getLogger("SocketForwarder");
+    auto logger = log4cxx::Logger::getLogger("main");
 
     LOG4CXX_INFO(logger, "Running SocketForwarder v" << VERSION);
 

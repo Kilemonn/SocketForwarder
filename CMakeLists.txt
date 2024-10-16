@@ -26,6 +26,7 @@ set(FORWARDER_SOURCE
     socket-forwarder/environment/Environment.cpp
     socket-forwarder/forwarder/Forwarder.cpp
     socket-forwarder/sockets/Sockets.cpp
+    socket-forwarder/logger/Logger.cpp
 )
 
 add_executable(SocketForwarder ${FORWARDER_SOURCE})

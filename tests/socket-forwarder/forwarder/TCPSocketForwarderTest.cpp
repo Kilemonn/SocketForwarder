@@ -6,6 +6,7 @@
 
 #include "../../../socket-forwarder/environment/Environment.h"
 #include "../../../socket-forwarder/forwarder/Forwarder.h"
+#include "../../../socket-forwarder/logger/Logger.h"
 
 #include <log4cxx/basicconfigurator.h>
 
@@ -24,7 +25,7 @@ namespace forwarder
 		static void SetUpTestCase()
 		{
 			log4cxx::BasicConfigurator::resetConfiguration();
-			log4cxx::BasicConfigurator::configure();
+			forwarder::initialiseConsoleLogger();
 			log4cxx::Logger::getRootLogger()->setLevel(log4cxx::Level::getDebug());
 		}
 		
