@@ -9,7 +9,7 @@
 # docker push kilemon/socket-forwarder:0.1.0
 
 # FROM alpine:3.20.2 AS builder
-FROM ubuntu:24.10 AS builder
+FROM ubuntu:24.04 AS builder
 
 WORKDIR /builder
 
@@ -32,14 +32,14 @@ WORKDIR /builder/build/tests
 RUN ["./SocketForwarderTests"]
 
 # FROM alpine:3.20.2 AS runner
-FROM ubuntu:24.10 AS runner
+FROM ubuntu:24.04 AS runner
 
 WORKDIR /socket-forwarder
 
 # For alpine linux
 # RUN apk update && apk upgrade && apk add libstdc++
 
-RUN apt update && apt install liblog4cxx-dev -y
+RUN apt update && apt install liblog4cxx-dev -y && rm -rf /var/cache/apt/archives/* && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /builder/build/SocketForwarder /socket-forwarder/SocketForwarder
 
