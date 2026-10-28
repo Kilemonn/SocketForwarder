@@ -22,7 +22,7 @@ namespace forwarder
     protected:
         UDPSocketForwarderTest() : udpSocket()
         {
-            udpSocket.bind();
+            udpSocket.bind(kt::InternetProtocolVersion::Any);
             forwarder = forwarder::Forwarder(std::nullopt, udpSocket, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT);
         }
 
@@ -54,7 +54,7 @@ namespace forwarder
 
         // Add client 1 to the group
 		kt::UDPSocket client1;
-        ASSERT_TRUE(client1.bind().first); // Bind since we will recieve data later
+        ASSERT_EQ(0, client1.bind(kt::InternetProtocolVersion::Any).first); // Bind since we will recieve data later
         ASSERT_EQ(NEW_CLIENT_PREFIX_DEFAULT.size() + std::to_string(client1.getListeningPort().value()).size(), client1.sendTo("localhost", udpSocket.getListeningPort().value(), NEW_CLIENT_PREFIX_DEFAULT + std::to_string(client1.getListeningPort().value())).first);
 		std::this_thread::sleep_for(10ms);
 
@@ -63,7 +63,7 @@ namespace forwarder
 
         // Add client 2 to the group
 		kt::UDPSocket client2;
-        ASSERT_TRUE(client2.bind().first); // Bind since we will recieve data later
+        ASSERT_EQ(0, client2.bind(kt::InternetProtocolVersion::Any).first); // Bind since we will recieve data later
         ASSERT_EQ(NEW_CLIENT_PREFIX_DEFAULT.size() + std::to_string(client2.getListeningPort().value()).size(), client2.sendTo("localhost", udpSocket.getListeningPort().value(), NEW_CLIENT_PREFIX_DEFAULT + std::to_string(client2.getListeningPort().value())).first);
 		std::this_thread::sleep_for(10ms);
 
@@ -163,7 +163,7 @@ namespace forwarder
         for (size_t i = 0; i < amountOfClients; i++)
 		{
 			kt::UDPSocket socket;
-            ASSERT_TRUE(socket.bind().first);
+            ASSERT_EQ(0, socket.bind(kt::InternetProtocolVersion::Any).first);
 			ASSERT_EQ(NEW_CLIENT_PREFIX_DEFAULT.size() + std::to_string(socket.getListeningPort().value()).size(), socket.sendTo("localhost", udpSocket.getListeningPort().value(), NEW_CLIENT_PREFIX_DEFAULT + std::to_string(socket.getListeningPort().value())).first);
 			sockets.push_back(socket);
             std::this_thread::sleep_for(1ms);
