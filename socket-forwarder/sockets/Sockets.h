@@ -4,12 +4,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include <serversocket/ServerSocket.h>
+#include <serversocket/TCPServerSocket.h>
 #include <socket/UDPSocket.h>
 
 namespace forwarder
 {
-    std::optional<kt::ServerSocket> setUpTcpServerSocket(std::optional<std::string> = std::nullopt);
+    std::optional<kt::TCPServerSocket> setUpTcpServerSocket(std::optional<std::string> = std::nullopt);
 
     std::optional<kt::UDPSocket> setUpUDPSocket(std::optional<std::string> = std::nullopt);
 

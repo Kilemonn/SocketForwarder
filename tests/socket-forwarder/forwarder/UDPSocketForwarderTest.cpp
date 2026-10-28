@@ -55,7 +55,7 @@ namespace forwarder
         // Add client 1 to the group
 		kt::UDPSocket client1;
         ASSERT_TRUE(client1.bind().first); // Bind since we will recieve data later
-        ASSERT_TRUE(client1.sendTo("localhost", udpSocket.getListeningPort().value(), NEW_CLIENT_PREFIX_DEFAULT + std::to_string(client1.getListeningPort().value())).first.first);
+        ASSERT_EQ(NEW_CLIENT_PREFIX_DEFAULT.size() + std::to_string(client1.getListeningPort().value()).size(), client1.sendTo("localhost", udpSocket.getListeningPort().value(), NEW_CLIENT_PREFIX_DEFAULT + std::to_string(client1.getListeningPort().value())).first);
 		std::this_thread::sleep_for(10ms);
 
         // Check group count is incremented since client 1 has joined
@@ -64,7 +64,7 @@ namespace forwarder
         // Add client 2 to the group
 		kt::UDPSocket client2;
         ASSERT_TRUE(client2.bind().first); // Bind since we will recieve data later
-        ASSERT_TRUE(client2.sendTo("localhost", udpSocket.getListeningPort().value(), NEW_CLIENT_PREFIX_DEFAULT + std::to_string(client2.getListeningPort().value())).first.first);
+        ASSERT_EQ(NEW_CLIENT_PREFIX_DEFAULT.size() + std::to_string(client2.getListeningPort().value()).size(), client2.sendTo("localhost", udpSocket.getListeningPort().value(), NEW_CLIENT_PREFIX_DEFAULT + std::to_string(client2.getListeningPort().value())).first);
 		std::this_thread::sleep_for(10ms);
 
         // Check group count is incremented since client 2 has joined
@@ -72,7 +72,7 @@ namespace forwarder
 
         // Send to group from client1
 		std::string toSend = "UDPSocketForwarderTest";
-		ASSERT_TRUE(client1.sendTo("localhost", udpSocket.getListeningPort().value(), toSend).first.first);
+		ASSERT_EQ(toSend.size(), client1.sendTo("localhost", udpSocket.getListeningPort().value(), toSend).first);
 		std::this_thread::sleep_for(10ms);
 
         // Check it is received at client 2
@@ -89,7 +89,7 @@ namespace forwarder
         
         // Send different message from client 2
 		toSend += "99283647561";
-		ASSERT_TRUE(client2.sendTo("localhost", udpSocket.getListeningPort().value(), toSend).first.first);
+		ASSERT_EQ(toSend.size(), client2.sendTo("localhost", udpSocket.getListeningPort().value(), toSend).first);
 		std::this_thread::sleep_for(10ms);
 
         // Check client 1 received it
@@ -164,7 +164,7 @@ namespace forwarder
 		{
 			kt::UDPSocket socket;
             ASSERT_TRUE(socket.bind().first);
-			ASSERT_TRUE(socket.sendTo("localhost", udpSocket.getListeningPort().value(), NEW_CLIENT_PREFIX_DEFAULT + std::to_string(socket.getListeningPort().value())).first.first);
+			ASSERT_EQ(NEW_CLIENT_PREFIX_DEFAULT.size() + std::to_string(socket.getListeningPort().value()).size(), socket.sendTo("localhost", udpSocket.getListeningPort().value(), NEW_CLIENT_PREFIX_DEFAULT + std::to_string(socket.getListeningPort().value())).first);
 			sockets.push_back(socket);
             std::this_thread::sleep_for(1ms);
 		}
@@ -176,7 +176,7 @@ namespace forwarder
         for (size_t i = 0; i < messagesToSend; i++)
 		{
 			kt::UDPSocket& socket = sockets[0];
-			ASSERT_TRUE(socket.sendTo("localhost", udpSocket.getListeningPort().value(), message + std::to_string(i)).first.first);
+			ASSERT_EQ(message.size() + std::to_string(i).size(), socket.sendTo("localhost", udpSocket.getListeningPort().value(), message + std::to_string(i)).first);
             std::this_thread::sleep_for(2ms);
 		}
 

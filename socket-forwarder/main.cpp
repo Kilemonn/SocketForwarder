@@ -4,6 +4,8 @@
 #include <string>
 #include <thread>
 #include <algorithm>
+#include <csignal>
+#include <functional>
 
 #include "sockets/Sockets.h"
 #include "environment/Environment.h"
@@ -13,6 +15,22 @@
 
 // Make sure version of built image matches
 const std::string VERSION = "0.4.0";
+
+std::function<void(int)> createShutdownHandler(forwarder::Forwarder& forwarder)
+{
+    return [&forwarder](int signal) { forwarder.stop(); forwarder.join(); };
+}
+
+std::function<void(int)> handlerFunction;
+
+// A wrapper function to pass to std::signal()
+void signalHandler(int signal)
+{
+    if (handlerFunction)
+    {
+        handlerFunction(signal);
+    }
+}
 
 int main(int argc, char** argv)
 {
@@ -29,7 +47,7 @@ int main(int argc, char** argv)
     LOG4CXX_INFO(logger, "Using max read in size: [" << maxReadInSize << "].");
     LOG4CXX_INFO(logger, "Binding to host address [" << forwarder::getEnvironmentVariableValueOrDefault(forwarder::HOST_ADDRESS, forwarder::HOST_ADDRESS_DEFAULT) << "].");
 
-    std::optional<kt::ServerSocket> serverSocket = forwarder::setUpTcpServerSocket(argc > 1 ? std::make_optional(std::string(argv[1])) : std::nullopt);
+    std::optional<kt::TCPServerSocket> serverSocket = forwarder::setUpTcpServerSocket(argc > 1 ? std::make_optional(std::string(argv[1])) : std::nullopt);
     std::optional<kt::UDPSocket> udpSocket = forwarder::setUpUDPSocket(argc > 2 ? std::make_optional(std::string(argv[2])) : std::nullopt);
 
     forwarder::Forwarder forwarder(serverSocket, udpSocket, newClientPrefix, maxReadInSize);
@@ -56,6 +74,13 @@ int main(int argc, char** argv)
             }
         }
     }
+
+    // Register either SIGINT and SIGTERM to shutdown
+    handlerFunction = createShutdownHandler(forwarder);
+
+    // We have to provide an actual function here, we cannot reference a std::function
+    std::signal(SIGKILL, signalHandler);
+    std::signal(SIGTERM, signalHandler);
 
     forwarder.start();
     forwarder.join();
