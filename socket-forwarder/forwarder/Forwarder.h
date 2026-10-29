@@ -7,7 +7,7 @@
 #include <unordered_set>
 #include <queue>
 
-#include <serversocket/ServerSocket.h>
+#include <serversocket/TCPServerSocket.h>
 #include <socket/TCPSocket.h>
 #include <socket/UDPSocket.h>
 
@@ -50,7 +50,7 @@ namespace forwarder
         unsigned short maxReadInSize;
 
         std::optional<kt::UDPSocket> udpRecieveSocket = std::nullopt;
-        std::optional<kt::ServerSocket> tcpServerSocket = std::nullopt;
+        std::optional<kt::TCPServerSocket> tcpServerSocket = std::nullopt;
 
         std::unordered_map<kt::SocketAddress, std::string, AddressHash, AddressEqual> tcpPreconfigured;
 
@@ -65,7 +65,7 @@ namespace forwarder
         void addSocketToTCPGroup(const std::string&, kt::TCPSocket);
 
     public:
-        Forwarder(std::optional<kt::ServerSocket>, std::optional<kt::UDPSocket>, const std::string, const unsigned short);
+        Forwarder(std::optional<kt::TCPServerSocket>, std::optional<kt::UDPSocket>, const std::string, const unsigned short);
 
         void preConfigureTCPAddress(const std::string&, kt::SocketAddress);
         void addAddressToUDPGroup(kt::SocketAddress);

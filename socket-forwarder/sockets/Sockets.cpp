@@ -12,7 +12,7 @@ namespace forwarder
 {
     auto logger = log4cxx::Logger::getLogger("SocketForwarder");
 
-    std::optional<kt::ServerSocket> setUpTcpServerSocket(std::optional<std::string> defaultPort)
+    std::optional<kt::TCPServerSocket> setUpTcpServerSocket(std::optional<std::string> defaultPort)
     {
         std::optional<std::string> tcpPort = forwarder::getEnvironmentVariableValue(forwarder::TCP_PORT);
 
@@ -27,7 +27,7 @@ namespace forwarder
 
         try
         {
-            kt::ServerSocket serverSocket(kt::SocketType::Wifi, getEnvironmentVariableValueOrDefault(HOST_ADDRESS, HOST_ADDRESS_DEFAULT), portNumber);
+            kt::TCPServerSocket serverSocket(getEnvironmentVariableValueOrDefault(HOST_ADDRESS, HOST_ADDRESS_DEFAULT), portNumber);
             return std::make_optional(serverSocket);
         }
         catch(const kt::BindingException e)
@@ -58,7 +58,8 @@ namespace forwarder
         try
         {
             kt::UDPSocket udpSocket;
-            if (!udpSocket.bind(getEnvironmentVariableValueOrDefault(HOST_ADDRESS, HOST_ADDRESS_DEFAULT), portNumber).first)
+            std::pair<int, kt::SocketAddress> bindResult = udpSocket.bind(kt::InternetProtocolVersion::Any, getEnvironmentVariableValueOrDefault(HOST_ADDRESS, HOST_ADDRESS_DEFAULT), portNumber);
+            if (bindResult.first != 0)
             {
                 LOG4CXX_ERROR(logger, "[UDP] - Failed to bind to provided port [" << portNumber << "].");
                 return std::nullopt;

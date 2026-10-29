@@ -12,7 +12,7 @@
 
 namespace forwarder
 {
-    Forwarder::Forwarder(std::optional<kt::ServerSocket> tcpSocket, std::optional<kt::UDPSocket> udpSocket, const std::string prefix, const unsigned short maxRead):
+    Forwarder::Forwarder(std::optional<kt::TCPServerSocket> tcpSocket, std::optional<kt::UDPSocket> udpSocket, const std::string prefix, const unsigned short maxRead):
         tcpServerSocket(tcpSocket), udpRecieveSocket(udpSocket), newClientPrefix(prefix), maxReadInSize(maxRead)
     { }
 
@@ -66,7 +66,7 @@ namespace forwarder
 
         if (udpRecieveSocket.has_value())
         {
-            if (udpRecieveSocket->isUdpBound())
+            if (udpRecieveSocket->isBound())
             {
                 LOG4CXX_INFO(logger, "[UDP] - Running UDP forwarder on port [" << udpRecieveSocket->getListeningPort().value() << "]");
                 startUDPForwarder();
@@ -98,14 +98,14 @@ namespace forwarder
 
     void Forwarder::startTCPConnectionListener()
     {
-        kt::ServerSocket& serverSocket = tcpServerSocket.value();
+        kt::TCPServerSocket& serverSocket = tcpServerSocket.value();
 
         LOG4CXX_INFO(logger, "[TCP] - Starting TCP connection listener...");
         while(forwarderIsRunning)
         {
             try
             {
-                kt::TCPSocket socket = serverSocket.acceptTCPConnection(10000); // microseconds
+                kt::TCPSocket socket = serverSocket.accept(10000); // microseconds
                 std::string addressString = kt::getAddress(socket.getSocketAddress()).value_or("") + ":" + std::to_string(kt::getPortNumber(socket.getSocketAddress()));
 
                 auto preConfiguredAddress = tcpPreconfigured.find(socket.getSocketAddress());
@@ -142,6 +142,8 @@ namespace forwarder
                 LOG4CXX_ERROR(logger, "[TCP] - Failed to accept incoming client: " << e.what());
             }
         }
+
+        LOG4CXX_INFO(logger, "[TCP] - Stopping listener thread.");
 
         // If we exit the loop, close the server socket
         serverSocket.close();
@@ -183,7 +185,7 @@ namespace forwarder
                                 }
                                 else
                                 {
-                                    if (forwardToSocket.send(received, MSG_NOSIGNAL).first)
+                                    if (forwardToSocket.send(received, MSG_NOSIGNAL) > 0)
                                     {
                                         LOG4CXX_DEBUG(logger, "[TCP - " + uuidString + "] - Group [" << groupID << "], successfully forwarded to peer [" << j << "]");
 
@@ -213,10 +215,12 @@ namespace forwarder
             }
         }
 
+        LOG4CXX_INFO(logger, "[TCP] - Stopping forwarder thread.");
+
         // Once we are out of the loop just run through and close everything
         for (auto it = tcpSessions.begin(); it != tcpSessions.end(); ++it)
         {
-            for (const kt::TCPSocket& socket : it->second)
+            for (kt::TCPSocket& socket : it->second)
             {
                 socket.close();
             }
@@ -283,6 +287,9 @@ namespace forwarder
                 }
             }
         }
+
+        LOG4CXX_INFO(logger, "[UDP] - Stopping listener thread.");
+
         udpSocket.close();
     }
 
@@ -303,8 +310,8 @@ namespace forwarder
                 std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
                 for (const kt::SocketAddress& addr : udpKnownPeers)
                 {
-                    std::pair<bool, int> result = sendSocket.sendTo(message, addr);
-                    LOG4CXX_DEBUG(logger, "[UDP - " + uuidString + "] - Forwarded to peer with address: [" << kt::getAddress(addr).value_or("") + ":" + std::to_string(kt::getPortNumber(addr)) << "]. With result [" << result.second << "]");
+                    int result = sendSocket.sendTo(addr, message);
+                    LOG4CXX_DEBUG(logger, "[UDP - " + uuidString + "] - Forwarded to peer with address: [" << kt::getAddress(addr).value_or("") + ":" + std::to_string(kt::getPortNumber(addr)) << "]. With result [" << result << "]");
                 }
 
                 LOG4CXX_DEBUG(logger, "[UDP - " + uuidString + "] - Forwarded to [" << udpKnownPeers.size() << "] peer(s).");
@@ -317,6 +324,8 @@ namespace forwarder
                 std::this_thread::sleep_for(10us);
             }
         }
+
+        LOG4CXX_INFO(logger, "[UDP] - Stopping forwarder thread.");
 
         udpKnownPeers.clear();
     }

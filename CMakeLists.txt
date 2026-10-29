@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.20)
 
 include(ExternalProject)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(PROJECT_NAME SocketForwarder)
 
@@ -10,7 +10,7 @@ project(${PROJECT_NAME} VERSION 0.4.0)
 
 ExternalProject_Add(CppSocketLibrary
     GIT_REPOSITORY https://github.com/Kilemonn/Cpp-SocketLibrary.git
-    GIT_TAG v0.5.3
+    GIT_TAG v0.7.0
     INSTALL_COMMAND ""
     UPDATE_DISCONNECTED FALSE
     BUILD_IN_SOURCE TRUE
