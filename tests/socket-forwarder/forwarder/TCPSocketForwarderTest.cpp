@@ -76,7 +76,7 @@ namespace forwarder
 		std::this_thread::sleep_for(10ms);
 
 		ASSERT_FALSE(client1.ready());
-		ASSERT_TRUE(client2.ready());
+		ASSERT_TRUE(client2.ready(1000000));
 		std::string received = client2.receiveAmount(50);
 		ASSERT_EQ(toSend, received);
 		// Make sure client 3 did not receive anything since its not in that group
@@ -87,7 +87,7 @@ namespace forwarder
 		std::this_thread::sleep_for(10ms);
 
 		ASSERT_FALSE(client2.ready());
-		ASSERT_TRUE(client1.ready());
+		ASSERT_TRUE(client1.ready(1000000));
 		toSend = client1.receiveAmount(50);
 		ASSERT_EQ(toSend, received);
 
@@ -123,7 +123,7 @@ namespace forwarder
 		ASSERT_EQ(content.size(), client1.send(content));
 		std::this_thread::sleep_for(10ms);
 
-		ASSERT_TRUE(client2.ready());
+		ASSERT_TRUE(client2.ready(1000000));
 		std::string recieved = client2.receiveAmount(50);
 
 		ASSERT_EQ(content, recieved);
@@ -131,7 +131,7 @@ namespace forwarder
 		ASSERT_EQ(content.size() + content.size(), client1.send(content + content));
 		std::this_thread::sleep_for(10ms);
 
-		ASSERT_TRUE(client2.ready());
+		ASSERT_TRUE(client2.ready(1000000));
 		recieved = client2.receiveAmount(100);
 		ASSERT_EQ(content + content, recieved);
 
@@ -176,7 +176,7 @@ namespace forwarder
 			for (size_t clientIndex = 1; clientIndex < amountOfClients; clientIndex++)
 			{
 				kt::TCPSocket& socket = sockets[clientIndex];
-				ASSERT_TRUE(socket.ready());
+				ASSERT_TRUE(socket.ready(1000000));
 				std::string received = socket.receiveAmount(message.size() + std::to_string(i).size());
 				ASSERT_EQ(message + std::to_string(i), received);
 			}
