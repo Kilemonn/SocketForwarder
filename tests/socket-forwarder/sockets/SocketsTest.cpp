@@ -1,7 +1,5 @@
 #include <gtest/gtest.h>
 
-#include "../../../socket-forwarder/sockets/Sockets.h"
-
 namespace forwarder
 {
     TEST(SocketsTest, SocketsSplit_withElements)

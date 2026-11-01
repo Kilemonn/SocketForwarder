@@ -1,0 +1,35 @@
+#pragma once
+
+#include <string>
+#include <vector>
+
+#include <address/SocketAddress.h>
+
+namespace forwarder
+{
+    struct ForwarderGroup
+    {
+        unsigned short receiverPort;
+        unsigned short senderPort;
+        std::string groupId;
+        std::vector<kt::SocketAddress> preConfiguredAddresses;
+    };
+
+    class ForwarderConfig
+    {
+        private:
+            std::string hostAddress;
+            unsigned short tcpMaxReadInSize;
+            unsigned short udpMaxReadInSize;
+            std::vector<ForwarderGroup> tcpGroups;
+            std::vector<ForwarderGroup> udpGroups;
+
+        public:
+            ForwarderConfig(std::string, unsigned short, unsigned short, std::vector<ForwarderGroup>, std::vector<ForwarderGroup>);
+            std::string getHostAddress() const;
+            unsigned short getTcpMaxReadInSize() const;
+            unsigned short getUdpMaxReadInSize() const;
+            std::vector<ForwarderGroup> getTcpGroups() const;
+            std::vector<ForwarderGroup> getUdpGroups() const;
+    };
+}

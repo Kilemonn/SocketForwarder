@@ -11,6 +11,8 @@
 #include <socket/TCPSocket.h>
 #include <socket/UDPSocket.h>
 
+#include "ForwarderConfig.h"
+
 #include <log4cxx/logger.h>
 
 namespace forwarder
@@ -19,7 +21,10 @@ namespace forwarder
     class Forwarder
     {
     protected:
-        std::unordered_map<std::string, std::vector<kt::TCPSocket>> tcpSessions;
+        // Group ID -> receiver sockets
+        std::unordered_map<std::string, std::vector<kt::TCPSocket>> tcpReceiverSockets;
+        // GroupId -> sender sockets
+        std::unordered_map<std::string, std::vector<kt::TCPSocket>> tcpSenderSockets;
 
         struct AddressHash
         {
@@ -37,42 +42,41 @@ namespace forwarder
             }
         };
 
-        // For UDP since we don't know who is sending specific messages from, ALL UDP connections will be treated as the same group
-        std::unordered_set<kt::SocketAddress, AddressHash, AddressEqual> udpKnownPeers;
-        std::queue<std::string> udpMessageQueue;
+        // GroupID -> set of socket addresses
+        std::unordered_map<std::string, std::unordered_set<kt::SocketAddress, AddressHash, AddressEqual>> udpReceiverAddresses;
+        
+        // GroupId -> queue of string messages
+        std::unordered_map<std::string, std::queue<std::string>> udpMessageQueue;
 
-        std::optional<std::pair<std::thread, std::thread>> tcpRunningThreads = std::nullopt;
-        std::optional<std::pair<std::thread, std::thread>> udpRunningThreads = std::nullopt;
+        std::vector<std::thread> tcpRunningThreads;
+        std::vector<std::thread> udpRunningThreads;
 
         log4cxx::LoggerPtr logger = log4cxx::Logger::getLogger("Forwarder");
         bool forwarderIsRunning = false;
-        std::string newClientPrefix;
-        unsigned short maxReadInSize;
-
-        std::optional<kt::UDPSocket> udpRecieveSocket = std::nullopt;
-        std::optional<kt::TCPServerSocket> tcpServerSocket = std::nullopt;
-
-        std::unordered_map<kt::SocketAddress, std::string, AddressHash, AddressEqual> tcpPreconfigured;
+        ForwarderConfig config;
 
         void startUDPForwarder();
-        void startUDPListener();
-        void startUDPDataForwarder();
+        void startUDPListener(std::pair<kt::UDPSocket, kt::UDPSocket>, std::string);
+        void startUDPDataForwarder(std::string);
 
         void startTCPForwarder();
-        void startTCPConnectionListener();
-        void startTCPDataForwarder();
+        void startTCPConnectionListener(std::pair<kt::TCPServerSocket, kt::TCPServerSocket>, const std::string);
+        void startTCPDataForwarder(std::string);
 
-        void addSocketToTCPGroup(const std::string&, kt::TCPSocket);
+        std::optional<std::pair<kt::TCPServerSocket, kt::TCPServerSocket>> initializeConnectionAcceptingSocketsForGroup(ForwarderGroup);
+        std::optional<std::pair<kt::UDPSocket, kt::UDPSocket>> initializeUdpSocketsForConnection(ForwarderGroup);
+
+        void addSocketToTCPRecieverGroup(const std::string&, kt::TCPSocket);
+        void addSocketToTCPSenderGroup(const std::string&, kt::TCPSocket);
 
     public:
-        Forwarder(std::optional<kt::TCPServerSocket>, std::optional<kt::UDPSocket>, const std::string, const unsigned short);
+        Forwarder(ForwarderConfig);
 
-        void preConfigureTCPAddress(const std::string&, kt::SocketAddress);
-        void addAddressToUDPGroup(kt::SocketAddress);
+        void addAddressToReceiverUDPGroup(std::string, kt::SocketAddress);
 
         bool tcpGroupWithIdExists(std::string&);
         size_t tcpGroupMemberCount(std::string&);
-        size_t udpGroupMemberCount();
+        size_t udpGroupMemberCount(std::string&);
         
         void start();
         void join();

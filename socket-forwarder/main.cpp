@@ -7,9 +7,9 @@
 #include <csignal>
 #include <functional>
 
-#include "sockets/Sockets.h"
 #include "environment/Environment.h"
 #include "forwarder/Forwarder.h"
+#include "forwarder/ForwarderConfig.h"
 #include "logger/Logger.h"
 
 
@@ -32,7 +32,7 @@ void signalHandler(int signal)
     }
 }
 
-int main(int argc, char** argv)
+int main(int argc, char** argv, char* envp[])
 {
     forwarder::initialiseConsoleLogger();
 
@@ -40,40 +40,21 @@ int main(int argc, char** argv)
 
     LOG4CXX_INFO(logger, "Running SocketForwarder v" << VERSION);
 
-    const std::string newClientPrefix = forwarder::getEnvironmentVariableValueOrDefault(forwarder::NEW_CLIENT_PREFIX, forwarder::NEW_CLIENT_PREFIX_DEFAULT);
-    const unsigned short maxReadInSize = std::atoi(forwarder::getEnvironmentVariableValueOrDefault(forwarder::MAX_READ_IN_SIZE, std::to_string(forwarder::MAX_READ_IN_DEFAULT)).c_str());
+    const unsigned short tcpMaxReadInSize = std::atoi(forwarder::getEnvironmentVariableValueOrDefault(forwarder::TCP_MAX_READ_IN_SIZE, std::to_string(forwarder::MAX_READ_IN_DEFAULT)).c_str());
+    const unsigned short udpMaxReadInSize = std::atoi(forwarder::getEnvironmentVariableValueOrDefault(forwarder::UDP_MAX_READ_IN_SIZE, std::to_string(forwarder::MAX_READ_IN_DEFAULT)).c_str());
 
-    LOG4CXX_INFO(logger, "Using new client prefix: [" << newClientPrefix << "].");
-    LOG4CXX_INFO(logger, "Using max read in size: [" << maxReadInSize << "].");
-    LOG4CXX_INFO(logger, "Binding to host address [" << forwarder::getEnvironmentVariableValueOrDefault(forwarder::HOST_ADDRESS, forwarder::HOST_ADDRESS_DEFAULT) << "].");
+    const std::string hostAddress = forwarder::getEnvironmentVariableValueOrDefault(forwarder::HOST_ADDRESS, forwarder::HOST_ADDRESS_DEFAULT);
+    LOG4CXX_INFO(logger, "Using max read in size for TCP: [" << tcpMaxReadInSize << "].");
+    LOG4CXX_INFO(logger, "Using max read in size for UDP: [" << udpMaxReadInSize << "].");
+    LOG4CXX_INFO(logger, "Binding to host address [" << hostAddress << "].");
 
-    std::optional<kt::TCPServerSocket> serverSocket = forwarder::setUpTcpServerSocket(argc > 1 ? std::make_optional(std::string(argv[1])) : std::nullopt);
-    std::optional<kt::UDPSocket> udpSocket = forwarder::setUpUDPSocket(argc > 2 ? std::make_optional(std::string(argv[2])) : std::nullopt);
+    std::vector<forwarder::ForwarderGroup> tcpGroups = forwarder::getForwarderGroups(envp, forwarder::TCP_GROUP_PREFIX);
+    std::vector<forwarder::ForwarderGroup> udpGroups = forwarder::getForwarderGroups(envp, forwarder::UDP_GROUP_PREFIX);
 
-    forwarder::Forwarder forwarder(serverSocket, udpSocket, newClientPrefix, maxReadInSize);
+    forwarder::ForwarderConfig config(hostAddress, tcpMaxReadInSize, udpMaxReadInSize, tcpGroups, udpGroups);
+    // Validate ports and atleast 1 group here?
 
-    std::vector<kt::SocketAddress> udpPreconfiguredAddresses = forwarder::getPreconfiguredUDPAddresses();
-    if (!udpPreconfiguredAddresses.empty())
-    {
-        LOG4CXX_INFO(logger, "UDP preconfigured addresses provided, setting into forwarder...");
-        for (const kt::SocketAddress& addr : udpPreconfiguredAddresses)
-        {
-            forwarder.addAddressToUDPGroup(addr);
-        }
-    }
-
-    std::unordered_map<std::string, std::vector<kt::SocketAddress>> tcpPreconfiguredAddresses = forwarder::getPreconfiguredTCPAddresses();
-    if (!tcpPreconfiguredAddresses.empty())
-    {
-        LOG4CXX_INFO(logger, "TCP preconfigured addresses provided, setting into forwarder...");
-        for (const auto& it : tcpPreconfiguredAddresses)
-        {
-            for (const kt::SocketAddress& addr : it.second)
-            {
-                forwarder.preConfigureTCPAddress(it.first, addr);
-            }
-        }
-    }
+    forwarder::Forwarder forwarder(config);
 
     // Register either SIGINT and SIGTERM to shutdown
     handlerFunction = createShutdownHandler(forwarder);
