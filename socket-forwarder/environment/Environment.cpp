@@ -118,15 +118,15 @@ namespace forwarder
 
                 unsigned short portNumber = static_cast<unsigned short>(std::atoi(parts[1].c_str()));
                 addrinfo info = kt::createUdpHints();
-                std::pair<std::vector<kt::SocketAddress>, int> resolvedAddresses = kt::resolveToAddresses(parts[0], portNumber, info);
-                if (resolvedAddresses.first.empty())
+                std::expected<std::vector<kt::SocketAddress>, int> resolvedAddresses = kt::resolveToAddresses(parts[0], portNumber, info);
+                if (!resolvedAddresses)
                 {
                     LOG4CXX_ERROR(logger, "[UDP] - Failed to resolve address [" << parts[0] << ":" << portNumber << "]. Address will not be added to UDP group.");
                 }
                 else
                 {
-                    kt::SocketAddress addr = resolvedAddresses.first.at(0);
-                    LOG4CXX_INFO(logger, "[UDP] - Resolved and added pre-configured address [" << kt::getAddress(addr).value_or("") + ":" + std::to_string(kt::getPortNumber(addr)) << "] to UDP group.");
+                    kt::SocketAddress addr = resolvedAddresses.value().at(0);
+                    LOG4CXX_INFO(logger, "[UDP] - Resolved and added pre-configured address [" << addr.getAddress().value_or("") + ":" + std::to_string(addr.getPortNumber()) << "] to UDP group.");
                     addresses.push_back(addr);
                 }
             }

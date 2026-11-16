@@ -16,21 +16,29 @@ namespace forwarder
 	class UDPSocketForwarderTest : public ::testing::Test
 	{
 	protected:
-        kt::UDPSocket udpSocket;
-        // Making this an optional so we can make sure the UDP socket is constructed and bound before handing it to the Forwarder
+        std::vector<ForwarderGroup> tcpGroups;
+		std::vector<ForwarderGroup> udpGroups;
+
 		std::optional<forwarder::Forwarder> forwarder = std::nullopt;
     protected:
-        UDPSocketForwarderTest() : udpSocket()
+        UDPSocketForwarderTest()
         {
-            udpSocket.bind(kt::InternetProtocolVersion::Any);
-            forwarder = forwarder::Forwarder(std::nullopt, udpSocket, NEW_CLIENT_PREFIX_DEFAULT, MAX_READ_IN_DEFAULT);
+            udpGroups = {
+				{.receiverPort = 11115, .senderPort = 11116, .groupId = "udpGroup1"},
+				{.receiverPort = 11117, .senderPort = 11118, .groupId = "udpGroup2"}
+			};
+
+			ForwarderConfig config(forwarder::HOST_ADDRESS_DEFAULT, forwarder::MAX_READ_IN_DEFAULT, forwarder::MAX_READ_IN_DEFAULT,
+				tcpGroups, udpGroups);
+
+			forwarder = Forwarder(config);
         }
 
         static void SetUpTestCase()
 		{
 			log4cxx::BasicConfigurator::resetConfiguration();
 			forwarder::initialiseConsoleLogger();
-            log4cxx::Logger::getRootLogger()->setLevel(log4cxx::Level::getDebug());
+            log4cxx::Logger::getRootLogger()->setLevel(log4cxx::Level::getInfo());
 		}
 
         void SetUp() override
@@ -43,66 +51,55 @@ namespace forwarder
         {
 			forwarder->stop();
             forwarder->join();
-
-			udpSocket.close();
         }
     };
 
 	TEST_F(UDPSocketForwarderTest, TestGeneralSendAndRecieve)
 	{
-        ASSERT_EQ(0, forwarder->udpGroupMemberCount());
+        ForwarderGroup group1 = udpGroups.at(0);
 
+        ASSERT_EQ(0, forwarder->udpGroupMemberCount(group1.groupId));
+
+        const std::string message = "m";
         // Add client 1 to the group
 		kt::UDPSocket client1;
-        ASSERT_EQ(0, client1.bind(kt::InternetProtocolVersion::Any).first); // Bind since we will recieve data later
-        ASSERT_EQ(NEW_CLIENT_PREFIX_DEFAULT.size() + std::to_string(client1.getListeningPort().value()).size(), client1.sendTo("localhost", udpSocket.getListeningPort().value(), NEW_CLIENT_PREFIX_DEFAULT + std::to_string(client1.getListeningPort().value())).first);
+        ASSERT_TRUE(client1.bind(kt::InternetProtocolVersion::Any)); // Bind to keep our recv and send address the same, so the forwarder will reply to the correct port
+        ASSERT_EQ(message.size(), client1.sendTo("localhost", group1.receiverPort, message).first);
 		std::this_thread::sleep_for(10ms);
 
         // Check group count is incremented since client 1 has joined
-		ASSERT_EQ(1, forwarder->udpGroupMemberCount());
+		ASSERT_EQ(1, forwarder->udpGroupMemberCount(group1.groupId));
 
-        // Add client 2 to the group
-		kt::UDPSocket client2;
-        ASSERT_EQ(0, client2.bind(kt::InternetProtocolVersion::Any).first); // Bind since we will recieve data later
-        ASSERT_EQ(NEW_CLIENT_PREFIX_DEFAULT.size() + std::to_string(client2.getListeningPort().value()).size(), client2.sendTo("localhost", udpSocket.getListeningPort().value(), NEW_CLIENT_PREFIX_DEFAULT + std::to_string(client2.getListeningPort().value())).first);
-		std::this_thread::sleep_for(10ms);
-
-        // Check group count is incremented since client 2 has joined
-        ASSERT_EQ(2, forwarder->udpGroupMemberCount());
-
-        // Send to group from client1
+		kt::UDPSocket client2; // We don't need to bind since this is just a sender socket
+        // Send to group from client2
 		std::string toSend = "UDPSocketForwarderTest";
-		ASSERT_EQ(toSend.size(), client1.sendTo("localhost", udpSocket.getListeningPort().value(), toSend).first);
+		ASSERT_EQ(toSend.size(), client2.sendTo("localhost", group1.senderPort, toSend).first);
 		std::this_thread::sleep_for(10ms);
+
+        // Check group count is the same since it only includes receivers counts
+        ASSERT_EQ(1, forwarder->udpGroupMemberCount(group1.groupId));
 
         // Check it is received at client 2
-        ASSERT_TRUE(client2.ready());
-        std::pair<std::optional<std::string>, std::pair<int, kt::SocketAddress>> readResult = client2.receiveFrom(50);
-        ASSERT_NE(-1, readResult.second.first);
-        ASSERT_EQ(toSend, readResult.first.value());
-
-        // Check it is received at client 1 because the UDP group does not know who sent it and just forwards to everyone
         ASSERT_TRUE(client1.ready());
-        readResult = client1.receiveFrom(50);
-        ASSERT_NE(-1, readResult.second.first);
-        ASSERT_EQ(toSend, readResult.first.value());
+        std::expected<std::pair<std::string, kt::SocketAddress>, int> readResult = client1.receiveFrom(50);
+        ASSERT_TRUE(readResult);
+        ASSERT_EQ(toSend, readResult.value().first);
+
+        // Make sure client2 has no messages as they are only a sender
+        ASSERT_FALSE(client2.ready());
         
         // Send different message from client 2
 		toSend += "99283647561";
-		ASSERT_EQ(toSend.size(), client2.sendTo("localhost", udpSocket.getListeningPort().value(), toSend).first);
+		ASSERT_EQ(toSend.size(), client2.sendTo("localhost", group1.senderPort, toSend).first);
 		std::this_thread::sleep_for(10ms);
 
         // Check client 1 received it
         ASSERT_TRUE(client1.ready());
         readResult = client1.receiveFrom(50);
-        ASSERT_NE(-1, readResult.second.first);
-        ASSERT_EQ(toSend, readResult.first.value());
+        ASSERT_TRUE(readResult);
+        ASSERT_EQ(toSend, readResult.value().first);
 
-        // Again since its a broadcast client 2 will also receive it
-        ASSERT_TRUE(client2.ready());
-        readResult = client2.receiveFrom(50);
-        ASSERT_NE(-1, readResult.second.first);
-        ASSERT_EQ(toSend, readResult.first.value());
+        ASSERT_FALSE(client2.ready());
 
 		client1.close();
 		client2.close();
@@ -119,10 +116,9 @@ namespace forwarder
                 kt::UDPSocket& socket = sockets[clientIndex];
                 if (socket.ready())
                 {
-                    std::pair<std::optional<std::string>, std::pair<int, kt::SocketAddress>> result = socket.receiveFrom(message.size() + std::to_string(i).size());
-                    ASSERT_NE(-1, result.second.first);
-                    ASSERT_NE(std::nullopt, result.first);
-                    ASSERT_TRUE(result.first.value().rfind(message, 0) == 0);
+                    std::expected<std::pair<std::string, kt::SocketAddress>, int> result = socket.receiveFrom(message.size() + std::to_string(i).size());
+                    ASSERT_TRUE(result);
+                    ASSERT_TRUE(result.value().first.rfind(message, 0) == 0);
                     
                     receivedMessageCount++;
                 }
@@ -148,37 +144,40 @@ namespace forwarder
      */
     TEST_F(UDPSocketForwarderTest, TestNumerousClients)
     {
+        ForwarderGroup group1 = udpGroups.at(0);
+
         const size_t amountOfClients = 200;
 		const size_t messagesToSend = 278;
 		std::string groupId = "TestNumerousClients-group";
 		std::vector<kt::UDPSocket> sockets;
         sockets.reserve(amountOfClients);
 
-        ASSERT_EQ(0, forwarder->udpGroupMemberCount());
+        ASSERT_EQ(0, forwarder->udpGroupMemberCount(group1.groupId));
 
-        int bufferSize = 0;
-        socklen_t size = sizeof(bufferSize);
-        int err = getsockopt(udpSocket.getListeningSocket(), SOL_SOCKET, SO_RCVBUF, (char*)&bufferSize, &size);
-        std::cout << "Buffer res: " << err << ". Buffer size is [" << bufferSize << "]." << std::endl;
+        // int bufferSize = 0;
+        // socklen_t size = sizeof(bufferSize);
+        // int err = getsockopt(udpSocket.getListeningSocket(), SOL_SOCKET, SO_RCVBUF, (char*)&bufferSize, &size);
+        // std::cout << "Buffer res: " << err << ". Buffer size is [" << bufferSize << "]." << std::endl;
         for (size_t i = 0; i < amountOfClients; i++)
 		{
 			kt::UDPSocket socket;
-            ASSERT_EQ(0, socket.bind(kt::InternetProtocolVersion::Any).first);
-			ASSERT_EQ(NEW_CLIENT_PREFIX_DEFAULT.size() + std::to_string(socket.getListeningPort().value()).size(), socket.sendTo("localhost", udpSocket.getListeningPort().value(), NEW_CLIENT_PREFIX_DEFAULT + std::to_string(socket.getListeningPort().value())).first);
+            ASSERT_TRUE(socket.bind(kt::InternetProtocolVersion::Any));
+			ASSERT_EQ(1, socket.sendTo("localhost", group1.receiverPort, "m").first);
 			sockets.push_back(socket);
             std::this_thread::sleep_for(1ms);
 		}
 		std::this_thread::sleep_for(10ms);
 
-        ASSERT_EQ(amountOfClients, forwarder->udpGroupMemberCount());
+        ASSERT_EQ(amountOfClients, forwarder->udpGroupMemberCount(group1.groupId));
 
 		std::string message = "TestNumerousClients";
+        kt::UDPSocket sendSocket;
         for (size_t i = 0; i < messagesToSend; i++)
 		{
-			kt::UDPSocket& socket = sockets[0];
-			ASSERT_EQ(message.size() + std::to_string(i).size(), socket.sendTo("localhost", udpSocket.getListeningPort().value(), message + std::to_string(i)).first);
+			ASSERT_EQ(message.size() + std::to_string(i).size(), sendSocket.sendTo("localhost", group1.senderPort, message + std::to_string(i)).first);
             std::this_thread::sleep_for(2ms);
 		}
+        sendSocket.close();
 
         std::this_thread::sleep_for(10ms);
 
@@ -198,10 +197,9 @@ namespace forwarder
 				kt::UDPSocket& socket = sockets[clientIndex];
                 if (socket.ready())
                 {
-                    std::pair<std::optional<std::string>, std::pair<int, kt::SocketAddress>> result = socket.receiveFrom(message.size() + std::to_string(i).size());
-                    ASSERT_NE(-1, result.second.first);
-                    ASSERT_NE(std::nullopt, result.first);
-                    ASSERT_TRUE(result.first.value().rfind(message, 0) == 0);
+                    std::expected<std::pair<std::string, kt::SocketAddress>, int> result = socket.receiveFrom(message.size() + std::to_string(i).size());
+                    ASSERT_TRUE(result);
+                    ASSERT_TRUE(result.value().first.rfind(message, 0) == 0);
                     receivedMessageCount++;
                 }
 			}

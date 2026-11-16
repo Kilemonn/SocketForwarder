@@ -20,7 +20,7 @@ namespace forwarder
 
     void Forwarder::addSocketToTCPRecieverGroup(const std::string &groupId, kt::TCPSocket socket)
     {
-        std::string addressString = kt::getAddress(socket.getSocketAddress()).value_or("") + ":" + std::to_string(kt::getPortNumber(socket.getSocketAddress()));
+        std::string addressString = socket.getSocketAddress().getAddress().value_or("") + ":" + std::to_string(socket.getSocketAddress().getPortNumber());
 
         if (tcpReceiverSockets.find(groupId) == tcpReceiverSockets.end())
         {
@@ -38,7 +38,7 @@ namespace forwarder
 
     void Forwarder::addSocketToTCPSenderGroup(const std::string& groupId, kt::TCPSocket socket)
     {
-        std::string addressString = kt::getAddress(socket.getSocketAddress()).value_or("") + ":" + std::to_string(kt::getPortNumber(socket.getSocketAddress()));
+        std::string addressString = socket.getSocketAddress().getAddress().value_or("") + ":" + std::to_string(socket.getSocketAddress().getPortNumber());
 
         if (tcpSenderSockets.find(groupId) == tcpSenderSockets.end())
         {
@@ -71,6 +71,8 @@ namespace forwarder
 
     void Forwarder::start()
     {
+        forwarderIsRunning = true;
+
         if (!config.getTcpGroups().empty())
         {
             startTCPForwarder();
@@ -88,8 +90,6 @@ namespace forwarder
         {
             LOG4CXX_INFO(logger, "[UDP] - No UDP groups were configured, UDP forwarding is disabled.");
         }
-
-        forwarderIsRunning = true;
     }
 
     void Forwarder::startTCPForwarder()
@@ -102,11 +102,11 @@ namespace forwarder
                 {
                     kt::TCPSocket preConfigured(address);
                     addSocketToTCPRecieverGroup(tcpConfig.groupId, preConfigured);
-                    LOG4CXX_INFO(logger, "Registered preconfigured address [" + kt::getAddress(address).value_or("") + ":" + std::to_string(kt::getPortNumber(address)) + "] in TCP group [" + tcpConfig.groupId + "]");
+                    LOG4CXX_INFO(logger, "Registered preconfigured address [" + address.getAddress().value_or("") + ":" + std::to_string(address.getPortNumber()) + "] in TCP group [" + tcpConfig.groupId + "]");
                 }
                 catch(const kt::SocketException& e)
                 {
-                    LOG4CXX_WARN(logger, "Failed to connect to and register preconfigured address [" + kt::getAddress(address).value_or("") + ":" + std::to_string(kt::getPortNumber(address)) + "] in TCP group [" + tcpConfig.groupId + "] with error: " + e.what());
+                    LOG4CXX_WARN(logger, "Failed to connect to and register preconfigured address [" + address.getAddress().value_or("") + ":" + std::to_string(address.getPortNumber()) + "] in TCP group [" + tcpConfig.groupId + "] with error: " + e.what());
                 }
             }
             
@@ -155,14 +155,14 @@ namespace forwarder
     {
         auto& [receiverSocket, senderSocket] = sockets;
 
-        LOG4CXX_INFO(logger, "[TCP] - Starting TCP connection listener for group [ " + groupId + "]");
+        LOG4CXX_INFO(logger, "[TCP] - Starting TCP connection listener for group [" + groupId + "]");
         while(forwarderIsRunning)
         {
             // Accept from receiver socket
             try
             {
                 kt::TCPSocket socket = receiverSocket.accept(10000); // microseconds
-                std::string addressString = kt::getAddress(socket.getSocketAddress()).value_or("") + ":" + std::to_string(kt::getPortNumber(socket.getSocketAddress()));
+                std::string addressString = socket.getSocketAddress().getAddress().value_or("") + ":" + std::to_string(socket.getSocketAddress().getPortNumber());
 
                 LOG4CXX_INFO(logger, "[TCP] - Group [" << groupId << "] - Accepted new receiver connection from [" << addressString << "].");
 
@@ -181,7 +181,7 @@ namespace forwarder
             try
             {
                 kt::TCPSocket socket = senderSocket.accept(10000);
-                std::string addressString = kt::getAddress(socket.getSocketAddress()).value_or("") + ":" + std::to_string(kt::getPortNumber(socket.getSocketAddress()));
+                std::string addressString = socket.getSocketAddress().getAddress().value_or("") + ":" + std::to_string(socket.getSocketAddress().getPortNumber());
 
                 LOG4CXX_INFO(logger, "[TCP] - Group [" << groupId << "] - Accepted new sender connection from [" << addressString << "].");
                 addSocketToTCPSenderGroup(groupId, socket);
@@ -271,7 +271,7 @@ namespace forwarder
                             for (size_t index : receiverToRemove)
                             {
                                 std::vector<kt::TCPSocket>::iterator socketPosition = std::next(receivers->second.begin(), index);
-                                LOG4CXX_INFO(logger, "[TCP - " + uuidString + "] - Group [" << groupId << "] - Closing and removing receiver socket with address [" << kt::getAddress(socketPosition->getSocketAddress()).value_or("") + ":" + std::to_string(kt::getPortNumber(socketPosition->getSocketAddress())) << "].");
+                                LOG4CXX_INFO(logger, "[TCP - " + uuidString + "] - Group [" << groupId << "] - Closing and removing receiver socket with address [" << socketPosition->getSocketAddress().getAddress().value_or("") + ":" + std::to_string(socketPosition->getSocketAddress().getPortNumber()) << "].");
                                 socketPosition->close();
                                 receivers->second.erase(socketPosition);
                             }
@@ -283,7 +283,7 @@ namespace forwarder
                 for (size_t index : senderToRemove)
                 {
                     std::vector<kt::TCPSocket>::iterator socketPosition = std::next(senderSockets->second.begin(), index);
-                    LOG4CXX_INFO(logger, "[TCP] - Group [" << groupId << "] - Closing and removing sender socket with address [" << kt::getAddress(socketPosition->getSocketAddress()).value_or("") + ":" + std::to_string(kt::getPortNumber(socketPosition->getSocketAddress())) << "].");
+                    LOG4CXX_INFO(logger, "[TCP] - Group [" << groupId << "] - Closing and removing sender socket with address [" << socketPosition->getSocketAddress().getAddress().value_or("") + ":" + std::to_string(socketPosition->getSocketAddress().getPortNumber()) << "].");
                     socketPosition->close();
                     senderSockets->second.erase(socketPosition);
                 }
@@ -369,11 +369,11 @@ namespace forwarder
                 try
                 {
                     addAddressToReceiverUDPGroup(udpConfig.groupId, address);
-                    LOG4CXX_INFO(logger, "Registered preconfigured address [" + kt::getAddress(address).value_or("") + ":" + std::to_string(kt::getPortNumber(address)) + "] in UDP group [" + udpConfig.groupId + "]");
+                    LOG4CXX_INFO(logger, "Registered preconfigured address [" + address.getAddress().value_or("") + ":" + std::to_string(address.getPortNumber()) + "] in UDP group [" + udpConfig.groupId + "]");
                 }
                 catch(const kt::SocketException& e)
                 {
-                    LOG4CXX_WARN(logger, "Failed to connect to and register preconfigured address [" + kt::getAddress(address).value_or("") + ":" + std::to_string(kt::getPortNumber(address)) + "] in UDP group [" + udpConfig.groupId + "] with error: " + e.what());
+                    LOG4CXX_WARN(logger, "Failed to connect to and register preconfigured address [" + address.getAddress().value_or("") + ":" + std::to_string(address.getPortNumber()) + "] in UDP group [" + udpConfig.groupId + "] with error: " + e.what());
                 }
             }
             
@@ -403,37 +403,40 @@ namespace forwarder
             if (receiverSocket.ready())
             {
                 eitherWereReady = true;
-                std::pair<std::optional<std::string>, std::pair<int, kt::SocketAddress>> result = receiverSocket.receiveFrom(config.getUdpMaxReadInSize());
-                if (result.second.first > 0 && result.first.has_value())
+                std::expected<std::pair<std::string, kt::SocketAddress>, int> result = receiverSocket.receiveFrom(config.getUdpMaxReadInSize());
+                if (result)
                 {
-                    std::string addressString = kt::getAddress(result.second.second).value_or("") + ":" + std::to_string(kt::getPortNumber(result.second.second));
-                    std::string message = result.first.value();
+                    std::string addressString = result.value().second.getAddress().value_or("") + ":" + std::to_string(result.value().second.getPortNumber());
+                    std::string message = result.value().first;
                     LOG4CXX_INFO(logger, "[UDP] - New client joined UDP group from address [" << addressString << "] with request reply port [" << message << "]");
 
-                    kt::SocketAddress address = result.second.second;
-                    address.ipv4.sin_port = htons(std::stoi(message));
+                    kt::SocketAddress address = result.value().second;
                     addAddressToReceiverUDPGroup(groupId, address);
                 }
             }
 
             if (senderSocket.ready())
             {
-                std::pair<std::optional<std::string>, std::pair<int, kt::SocketAddress>> result = senderSocket.receiveFrom(config.getUdpMaxReadInSize());
-                std::string addressString = kt::getAddress(result.second.second).value_or("") + ":" + std::to_string(kt::getPortNumber(result.second.second));
-                std::string& message = result.first.value();
-
-                LOG4CXX_DEBUG(logger, "[UDP] - Group [" + groupId + "] - Enqueuing received message of size [" << message.size() << "] from sender.");
-
-                auto queue = udpMessageQueue.find(groupId);
-                if (queue == udpMessageQueue.end())
+                eitherWereReady = true;
+                std::expected<std::pair<std::string, kt::SocketAddress>, int> result = senderSocket.receiveFrom(config.getUdpMaxReadInSize());
+                if (result)
                 {
-                    std::queue<std::string> newQueue;
-                    newQueue.push(message);
-                    udpMessageQueue.emplace(std::make_pair(groupId, newQueue));
-                }
-                else
-                {
-                    queue->second.push(message);
+                    std::string addressString = result.value().second.getAddress().value_or("") + ":" + std::to_string(result.value().second.getPortNumber());
+                    std::string& message = result.value().first;
+
+                    LOG4CXX_DEBUG(logger, "[UDP] - Group [" + groupId + "] - Enqueuing received message of size [" << message.size() << "] from sender.");
+
+                    auto queue = udpMessageQueue.find(groupId);
+                    if (queue == udpMessageQueue.end())
+                    {
+                        std::queue<std::string> newQueue;
+                        newQueue.push(message);
+                        udpMessageQueue.emplace(std::make_pair(groupId, newQueue));
+                    }
+                    else
+                    {
+                        queue->second.push(message);
+                    }
                 }
             }
             
@@ -472,7 +475,7 @@ namespace forwarder
                     for (auto& addr : receivers->second)
                     {
                         int result = sendSocket.sendTo(addr, message);
-                        LOG4CXX_DEBUG(logger, "[UDP - " + uuidString + "] Group [" + groupId + "] - Forwarded to peer with address: [" << kt::getAddress(addr).value_or("") + ":" + std::to_string(kt::getPortNumber(addr)) << "]. With result [" << result << "]");
+                        LOG4CXX_DEBUG(logger, "[UDP - " + uuidString + "] Group [" + groupId + "] - Forwarded to peer with address: [" << addr.getAddress().value_or("") + ":" + std::to_string(addr.getPortNumber()) << "]. With result [" << result << "]");
                     }
                 }
 

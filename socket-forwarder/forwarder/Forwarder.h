@@ -7,6 +7,8 @@
 #include <unordered_set>
 #include <queue>
 
+#include <cstring> // for memcmp()
+
 #include <serversocket/TCPServerSocket.h>
 #include <socket/TCPSocket.h>
 #include <socket/UDPSocket.h>
@@ -30,7 +32,7 @@ namespace forwarder
         {
             std::size_t operator()(const kt::SocketAddress& k) const
             {
-                return std::hash<std::string>()(kt::getAddress(k).value_or("") + ":" + std::to_string(kt::getPortNumber(k)));
+                return std::hash<std::string>()(k.getAddress().value_or("") + ":" + std::to_string(k.getPortNumber()));
             }
         };
 

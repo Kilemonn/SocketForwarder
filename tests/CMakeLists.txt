@@ -13,7 +13,7 @@ FetchContent_Declare(
   googletest
   DOWNLOAD_EXTRACT_TIMESTAMP TRUE
   # Specify the commit you depend on and update it regularly.
-  URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+  URL https://github.com/google/googletest/archive/refs/tags/v1.17.0.zip
 )
 
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
@@ -23,7 +23,7 @@ set(FORWARDER_TEST_SOURCE
     socket-forwarder/forwarder/TCPSocketForwarderTest.cpp
     socket-forwarder/forwarder/UDPSocketForwarderTest.cpp
 
-    socket-forwarder/sockets/SocketsTest.cpp
+    socket-forwarder/environment/EnvironmentTest.cpp
 )
 
 # This is duplicated from the parent CMakeLists.txt, since these are needed to build the tests
@@ -31,6 +31,7 @@ set(FORWARDER_SOURCE_FOR_TEST
     ../socket-forwarder/environment/Environment.cpp
     ../socket-forwarder/forwarder/Forwarder.cpp
     ../socket-forwarder/logger/Logger.cpp
+    ../socket-forwarder/forwarder/ForwarderConfig.cpp
 )
 
 add_executable(${PROJECT_NAME} ${FORWARDER_TEST_SOURCE} ${FORWARDER_SOURCE_FOR_TEST})
