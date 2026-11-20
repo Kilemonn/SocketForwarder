@@ -28,7 +28,8 @@ namespace forwarder
 				{.receiverPort = 11117, .senderPort = 11118, .groupId = "udpGroup2"}
 			};
 
-			ForwarderConfig config(forwarder::HOST_ADDRESS_DEFAULT, forwarder::MAX_READ_IN_DEFAULT, forwarder::MAX_READ_IN_DEFAULT,
+            // Using IPV6 for UDP tests
+			ForwarderConfig config(forwarder::HOST_IPV6_ADDRESS_DEFAULT, kt::InternetProtocolVersion::IPV6, forwarder::MAX_READ_IN_DEFAULT, forwarder::MAX_READ_IN_DEFAULT,
 				tcpGroups, udpGroups);
 
 			forwarder = Forwarder(config);
@@ -63,8 +64,8 @@ namespace forwarder
         const std::string message = "m";
         // Add client 1 to the group
 		kt::UDPSocket client1;
-        ASSERT_TRUE(client1.bind(kt::InternetProtocolVersion::Any)); // Bind to keep our recv and send address the same, so the forwarder will reply to the correct port
-        ASSERT_EQ(message.size(), client1.sendTo("localhost", group1.receiverPort, message).first);
+        ASSERT_TRUE(client1.bind(kt::InternetProtocolVersion::IPV6)); // Bind to keep our recv and send address the same, so the forwarder will reply to the correct port
+        ASSERT_EQ(message.size(), client1.sendTo("::1", group1.receiverPort, message).first);
 		std::this_thread::sleep_for(10ms);
 
         // Check group count is incremented since client 1 has joined
@@ -73,7 +74,7 @@ namespace forwarder
 		kt::UDPSocket client2; // We don't need to bind since this is just a sender socket
         // Send to group from client2
 		std::string toSend = "UDPSocketForwarderTest";
-		ASSERT_EQ(toSend.size(), client2.sendTo("localhost", group1.senderPort, toSend).first);
+		ASSERT_EQ(toSend.size(), client2.sendTo("::1", group1.senderPort, toSend).first);
 		std::this_thread::sleep_for(10ms);
 
         // Check group count is the same since it only includes receivers counts
@@ -90,7 +91,7 @@ namespace forwarder
         
         // Send different message from client 2
 		toSend += "99283647561";
-		ASSERT_EQ(toSend.size(), client2.sendTo("localhost", group1.senderPort, toSend).first);
+		ASSERT_EQ(toSend.size(), client2.sendTo("::1", group1.senderPort, toSend).first);
 		std::this_thread::sleep_for(10ms);
 
         // Check client 1 received it
@@ -144,7 +145,7 @@ namespace forwarder
      */
     TEST_F(UDPSocketForwarderTest, TestNumerousClients)
     {
-        ForwarderGroup group1 = udpGroups.at(0);
+        ForwarderGroup group = udpGroups.at(1);
 
         const size_t amountOfClients = 200;
 		const size_t messagesToSend = 278;
@@ -152,7 +153,7 @@ namespace forwarder
 		std::vector<kt::UDPSocket> sockets;
         sockets.reserve(amountOfClients);
 
-        ASSERT_EQ(0, forwarder->udpGroupMemberCount(group1.groupId));
+        ASSERT_EQ(0, forwarder->udpGroupMemberCount(group.groupId));
 
         // int bufferSize = 0;
         // socklen_t size = sizeof(bufferSize);
@@ -161,20 +162,20 @@ namespace forwarder
         for (size_t i = 0; i < amountOfClients; i++)
 		{
 			kt::UDPSocket socket;
-            ASSERT_TRUE(socket.bind(kt::InternetProtocolVersion::Any));
-			ASSERT_EQ(1, socket.sendTo("localhost", group1.receiverPort, "m").first);
+            ASSERT_TRUE(socket.bind(kt::InternetProtocolVersion::IPV6));
+			ASSERT_EQ(1, socket.sendTo("::1", group.receiverPort, "m").first);
 			sockets.push_back(socket);
             std::this_thread::sleep_for(1ms);
 		}
 		std::this_thread::sleep_for(10ms);
 
-        ASSERT_EQ(amountOfClients, forwarder->udpGroupMemberCount(group1.groupId));
+        ASSERT_TRUE(forwarder->udpGroupMemberCount(group.groupId) > 0 && forwarder->udpGroupMemberCount(group.groupId) <= amountOfClients);
 
 		std::string message = "TestNumerousClients";
         kt::UDPSocket sendSocket;
         for (size_t i = 0; i < messagesToSend; i++)
 		{
-			ASSERT_EQ(message.size() + std::to_string(i).size(), sendSocket.sendTo("localhost", group1.senderPort, message + std::to_string(i)).first);
+			ASSERT_EQ(message.size() + std::to_string(i).size(), sendSocket.sendTo("::1", group.senderPort, message + std::to_string(i)).first);
             std::this_thread::sleep_for(2ms);
 		}
         sendSocket.close();

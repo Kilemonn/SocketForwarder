@@ -19,14 +19,16 @@ namespace forwarder
     {
         private:
             std::string hostAddress;
+            kt::InternetProtocolVersion ipVersion;
             unsigned short tcpMaxReadInSize;
             unsigned short udpMaxReadInSize;
             std::vector<ForwarderGroup> tcpGroups;
             std::vector<ForwarderGroup> udpGroups;
 
         public:
-            ForwarderConfig(std::string, unsigned short, unsigned short, std::vector<ForwarderGroup>, std::vector<ForwarderGroup>);
+            ForwarderConfig(std::string, kt::InternetProtocolVersion, unsigned short, unsigned short, std::vector<ForwarderGroup>, std::vector<ForwarderGroup>);
             std::string getHostAddress() const;
+            kt::InternetProtocolVersion getIpVersion() const;
             unsigned short getTcpMaxReadInSize() const;
             unsigned short getUdpMaxReadInSize() const;
             std::vector<ForwarderGroup> getTcpGroups() const;

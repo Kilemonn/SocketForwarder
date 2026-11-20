@@ -30,7 +30,8 @@ namespace forwarder
 				{.receiverPort = 11113, .senderPort = 11114, .groupId = "tcpGroup2"}
 			};
 
-			ForwarderConfig config(forwarder::HOST_ADDRESS_DEFAULT, forwarder::MAX_READ_IN_DEFAULT, forwarder::MAX_READ_IN_DEFAULT,
+			// Using IPV4 for TCP tests
+			ForwarderConfig config(forwarder::HOST_IPV4_ADDRESS_DEFAULT, kt::InternetProtocolVersion::IPV4, forwarder::MAX_READ_IN_DEFAULT, forwarder::MAX_READ_IN_DEFAULT,
 				tcpGroups, udpGroups);
 
 			forwarder = Forwarder(config);

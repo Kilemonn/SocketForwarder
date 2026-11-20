@@ -22,6 +22,31 @@ namespace forwarder
         return val == nullptr ? defaultValue : std::string(val);
     }
 
+    kt::InternetProtocolVersion getHostIPVersion()
+    {
+        std::optional<std::string> ipVersion = getEnvironmentVariableValue(HOST_IP_VERSION);
+        if (!ipVersion.has_value())
+        {
+            return kt::InternetProtocolVersion::Any;
+        }
+
+        std::string version = ipVersion.value();
+        std::transform(version.begin(), version.end(), version.begin(), [](unsigned char c) {
+            return std::tolower(c);
+        });
+
+        if (version == "ipv4")
+        {
+            return kt::InternetProtocolVersion::IPV4;
+        }
+        else if (version == "ipv6")
+        {
+            return kt::InternetProtocolVersion::IPV6;
+        }
+
+        return kt::InternetProtocolVersion::Any;
+    }
+
     std::vector<std::pair<std::string, std::string>> getVariablesWithPrefix(const std::string &prefix, char **envp)
     {
         std::vector<std::pair<std::string, std::string>> variables;

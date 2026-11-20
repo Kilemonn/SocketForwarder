@@ -5,10 +5,19 @@
 #include <vector>
 #include "../forwarder/ForwarderConfig.h"
 
+#include <enums/InternetProtocolVersion.h>
+
 namespace forwarder
 {
+    const std::string IP_VERSION = "ip_version";
+
     const std::string SOCKET_FORWARDER_PREFIX = "socketforwarder.";
+
+    // `socketforwarder.host_address`
     const std::string HOST_ADDRESS = SOCKET_FORWARDER_PREFIX + "host_address";
+
+    // `socketforwarder.ip_version`
+    const std::string HOST_IP_VERSION = SOCKET_FORWARDER_PREFIX + IP_VERSION;
 
     const std::string GROUP_PREFIX = "group.";
     const std::string RECEIVER_PREFIX = "reciever.";
@@ -35,11 +44,14 @@ namespace forwarder
     const std::string UDP_MAX_READ_IN_SIZE = SOCKET_FORWARDER_PREFIX + UDP + MAX_READ_IN_SIZE;
 
     const unsigned short MAX_READ_IN_DEFAULT = 10240;
-    const std::string HOST_ADDRESS_DEFAULT = "0.0.0.0";
+    const std::string HOST_IPV4_ADDRESS_DEFAULT = "0.0.0.0";
+    const std::string HOST_IPV6_ADDRESS_DEFAULT = "::";
 
     std::optional<std::string> getEnvironmentVariableValue(std::string);
 
     std::string getEnvironmentVariableValueOrDefault(std::string, std::string);
+
+    kt::InternetProtocolVersion getHostIPVersion();
 
     std::vector<std::pair<std::string, std::string>> getVariablesWithPrefix(const std::string&, char**);
 

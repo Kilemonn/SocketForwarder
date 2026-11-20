@@ -43,7 +43,8 @@ int main(int argc, char** argv, char* envp[])
     const unsigned short tcpMaxReadInSize = std::atoi(forwarder::getEnvironmentVariableValueOrDefault(forwarder::TCP_MAX_READ_IN_SIZE, std::to_string(forwarder::MAX_READ_IN_DEFAULT)).c_str());
     const unsigned short udpMaxReadInSize = std::atoi(forwarder::getEnvironmentVariableValueOrDefault(forwarder::UDP_MAX_READ_IN_SIZE, std::to_string(forwarder::MAX_READ_IN_DEFAULT)).c_str());
 
-    const std::string hostAddress = forwarder::getEnvironmentVariableValueOrDefault(forwarder::HOST_ADDRESS, forwarder::HOST_ADDRESS_DEFAULT);
+    const kt::InternetProtocolVersion ipVersion = forwarder::getHostIPVersion();
+    const std::string hostAddress = forwarder::getEnvironmentVariableValueOrDefault(forwarder::HOST_ADDRESS, ipVersion == kt::InternetProtocolVersion::IPV6 ? forwarder::HOST_IPV6_ADDRESS_DEFAULT : forwarder::HOST_IPV4_ADDRESS_DEFAULT);
     LOG4CXX_INFO(logger, "Using max read in size for TCP: [" << tcpMaxReadInSize << "].");
     LOG4CXX_INFO(logger, "Using max read in size for UDP: [" << udpMaxReadInSize << "].");
     LOG4CXX_INFO(logger, "Binding to host address [" << hostAddress << "].");
@@ -51,12 +52,11 @@ int main(int argc, char** argv, char* envp[])
     std::vector<forwarder::ForwarderGroup> tcpGroups = forwarder::getForwarderGroups(envp, forwarder::TCP_GROUP_PREFIX);
     std::vector<forwarder::ForwarderGroup> udpGroups = forwarder::getForwarderGroups(envp, forwarder::UDP_GROUP_PREFIX);
 
-    forwarder::ForwarderConfig config(hostAddress, tcpMaxReadInSize, udpMaxReadInSize, tcpGroups, udpGroups);
+    forwarder::ForwarderConfig config(hostAddress, ipVersion, tcpMaxReadInSize, udpMaxReadInSize, tcpGroups, udpGroups);
     // Validate ports and atleast 1 group here?
 
     forwarder::Forwarder forwarder(config);
 
-    // Register either SIGINT and SIGTERM to shutdown
     handlerFunction = createShutdownHandler(forwarder);
 
     // We have to provide an actual function here, we cannot reference a std::function

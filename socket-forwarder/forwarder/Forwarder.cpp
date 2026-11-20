@@ -130,11 +130,11 @@ namespace forwarder
     {
         try
         {
-            kt::TCPServerSocket receiverSocket(config.getHostAddress(), group.receiverPort);
+            kt::TCPServerSocket receiverSocket(config.getHostAddress(), group.receiverPort, 20, config.getIpVersion());
 
             try
             {
-                kt::TCPServerSocket senderSocket(config.getHostAddress(), group.senderPort);
+                kt::TCPServerSocket senderSocket(config.getHostAddress(), group.senderPort, 20, config.getIpVersion());
 
                 return std::make_pair(receiverSocket, senderSocket);
             }
@@ -341,11 +341,11 @@ namespace forwarder
         try
         {
             kt::UDPSocket receiverSocket;
-            receiverSocket.bind(kt::InternetProtocolVersion::Any, config.getHostAddress(), udpGroup.receiverPort);
+            receiverSocket.bind(config.getIpVersion(), config.getHostAddress(), udpGroup.receiverPort);
             try
             {
                 kt::UDPSocket senderSocket;
-                senderSocket.bind(kt::InternetProtocolVersion::Any, config.getHostAddress(), udpGroup.senderPort);
+                senderSocket.bind(config.getIpVersion(), config.getHostAddress(), udpGroup.senderPort);
                 return std::make_pair(receiverSocket, senderSocket);
             }
             catch (const kt::SocketException e)
@@ -399,10 +399,8 @@ namespace forwarder
         LOG4CXX_INFO(logger, "[UDP] - Group [" + groupId + "] Starting UDP forwarder connection listener...");
         while (forwarderIsRunning)
         {
-            bool eitherWereReady = false;
-            if (receiverSocket.ready())
+            if (receiverSocket.ready(1))
             {
-                eitherWereReady = true;
                 std::expected<std::pair<std::string, kt::SocketAddress>, int> result = receiverSocket.receiveFrom(config.getUdpMaxReadInSize());
                 if (result)
                 {
@@ -415,9 +413,8 @@ namespace forwarder
                 }
             }
 
-            if (senderSocket.ready())
+            if (senderSocket.ready(1))
             {
-                eitherWereReady = true;
                 std::expected<std::pair<std::string, kt::SocketAddress>, int> result = senderSocket.receiveFrom(config.getUdpMaxReadInSize());
                 if (result)
                 {
@@ -438,12 +435,6 @@ namespace forwarder
                         queue->second.push(message);
                     }
                 }
-            }
-            
-            if (!eitherWereReady)
-            {
-                using namespace std::chrono_literals;
-                std::this_thread::sleep_for(10us);
             }
         }
 

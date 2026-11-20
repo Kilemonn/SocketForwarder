@@ -2,14 +2,19 @@
 
 namespace forwarder
 {
-    ForwarderConfig::ForwarderConfig(std::string hostAddress, unsigned short tcpMaxReadInSize, unsigned short udpMaxReadInSize, std::vector<ForwarderGroup> tcpGroups, std::vector<ForwarderGroup> udpGroups): 
-        hostAddress(hostAddress), tcpMaxReadInSize(tcpMaxReadInSize), udpMaxReadInSize(udpMaxReadInSize), tcpGroups(tcpGroups), udpGroups(udpGroups)
+    ForwarderConfig::ForwarderConfig(std::string hostAddress, kt::InternetProtocolVersion ipVersion, unsigned short tcpMaxReadInSize, unsigned short udpMaxReadInSize, std::vector<ForwarderGroup> tcpGroups, std::vector<ForwarderGroup> udpGroups): 
+        hostAddress(hostAddress), ipVersion(ipVersion), tcpMaxReadInSize(tcpMaxReadInSize), udpMaxReadInSize(udpMaxReadInSize), tcpGroups(tcpGroups), udpGroups(udpGroups)
     {
     }
 
     std::string ForwarderConfig::getHostAddress() const
     {
         return hostAddress;
+    }
+
+    kt::InternetProtocolVersion ForwarderConfig::getIpVersion() const
+    {
+        return ipVersion;
     }
 
     unsigned short ForwarderConfig::getTcpMaxReadInSize() const
