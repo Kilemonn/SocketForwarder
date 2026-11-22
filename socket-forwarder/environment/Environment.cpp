@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cctype>
-#include <set>
 
 #include <log4cxx/logger.h>
 
@@ -50,7 +49,7 @@ namespace forwarder
     std::vector<std::pair<std::string, std::string>> getVariablesWithPrefix(const std::string &prefix, char **envp)
     {
         std::vector<std::pair<std::string, std::string>> variables;
-        for (size_t i = 0; envp[i] != nullptr; ++i)
+        for (size_t i = 0; envp[i] != nullptr; i++)
         {
             std::string envVariable = envp[i];
             
@@ -81,10 +80,10 @@ namespace forwarder
         {
             if (key.starts_with(prefix))
             {
-                size_t pos = key.find(".", prefix.size());
+                size_t pos = key.find(".", prefix.size() + 1);
                 if (pos != std::string::npos)
                 {
-                    groups.emplace(key.substr(prefix.size(), pos));
+                    groups.emplace(key.substr(prefix.size(), pos - prefix.size()));
                 }
             }
         }
@@ -172,17 +171,17 @@ namespace forwarder
             forwarderGroup.groupId = groupName;
             std::vector<std::pair<std::string, std::string>> groupVariables = getVariablesWithPrefix(prefix + groupName + ".", envp);
 
-            std::optional<std::string> senderPort = getEnvironmentVariableValue(prefix + groupName + "." + forwarder::SENDER_PREFIX + forwarder::PORT_PREFIX);
+            std::optional<std::string> senderPort = getEnvironmentVariableValue(prefix + groupName + "." + forwarder::SENDER_PREFIX + forwarder::PORT);
             if (!senderPort.has_value())
             {
-                LOG4CXX_WARN(logger, "Failed to register group with Id [" + groupName + "] because [" + prefix + groupName + "." + forwarder::SENDER_PREFIX + forwarder::PORT_PREFIX + "] is not configured.");
+                LOG4CXX_WARN(logger, "Failed to register group with Id [" + groupName + "] because [" + prefix + groupName + "." + forwarder::SENDER_PREFIX + forwarder::PORT + "] is not configured.");
                 continue;
             }
 
-            std::optional<std::string> receiverPort = getEnvironmentVariableValue(prefix + groupName + "." + forwarder::RECEIVER_PREFIX + forwarder::PORT_PREFIX);
+            std::optional<std::string> receiverPort = getEnvironmentVariableValue(prefix + groupName + "." + forwarder::RECEIVER_PREFIX + forwarder::PORT);
             if (!receiverPort.has_value())
             {
-                LOG4CXX_WARN(logger, "Failed to register group with Id [" + groupName + "] because [" + prefix + groupName + "." + forwarder::RECEIVER_PREFIX + forwarder::PORT_PREFIX + "] is not configured.");
+                LOG4CXX_WARN(logger, "Failed to register group with Id [" + groupName + "] because [" + prefix + groupName + "." + forwarder::RECEIVER_PREFIX + forwarder::PORT + "] is not configured.");
                 continue;
             }
 

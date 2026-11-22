@@ -3,6 +3,7 @@
 #include <string>
 #include <optional>
 #include <vector>
+#include <set>
 #include "../forwarder/ForwarderConfig.h"
 
 #include <enums/InternetProtocolVersion.h>
@@ -33,7 +34,7 @@ namespace forwarder
 
     const std::string PRECONFIG_ADDRESSES_SUFFIX = "preconfig_addresses";
     const std::string MAX_READ_IN_SIZE = "max_read_in_size";
-    const std::string PORT_PREFIX = "port.";
+    const std::string PORT = "port";
 
     const std::string TCP = "tcp.";
     const std::string TCP_GROUP_PREFIX = SOCKET_FORWARDER_PREFIX + TCP + GROUP_PREFIX;
@@ -58,6 +59,8 @@ namespace forwarder
     std::vector<ForwarderGroup> getForwarderGroups(char**, const std::string&);
 
     std::vector<kt::SocketAddress> getPreconfiguredAddresses(const std::string&, const std::string = "");
+
+    std::set<std::string> getGroupsWithPrefix(const std::string&, std::vector<std::pair<std::string, std::string>>);
 
     std::vector<std::string> split(const std::string&, const std::string&);
 }
