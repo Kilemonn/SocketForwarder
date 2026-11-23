@@ -21,16 +21,16 @@ namespace forwarder
     const std::string HOST_IP_VERSION = SOCKET_FORWARDER_PREFIX + IP_VERSION;
 
     const std::string GROUP_PREFIX = "group.";
-    const std::string RECEIVER_PREFIX = "reciever.";
+    const std::string RECEIVER_PREFIX = "receiver.";
     const std::string SENDER_PREFIX = "sender.";
 
-    // `socketforwarder.tcp.group.<my-group>.reciever.port`
+    // `socketforwarder.tcp.group.<my-group>.receiver.port`
     // `socketforwarder.tcp.group.<my-group>.sender.port`
-    // `socketforwarder.tcp.group.<my-group>.reciever.preconfig_addresses`
+    // `socketforwarder.tcp.group.<my-group>.receiver.preconfig_addresses`
 
-    // `socketforwarder.udp.group.<my-group>.reciever.port`
+    // `socketforwarder.udp.group.<my-group>.receiver.port`
     // `socketforwarder.udp.group.<my-group>.sender.port`
-    // `socketforwarder.udp.group.<my-group>.reciever.preconfig_addresses`
+    // `socketforwarder.udp.group.<my-group>.receiver.preconfig_addresses`
 
     const std::string PRECONFIG_ADDRESSES_SUFFIX = "preconfig_addresses";
     const std::string MAX_READ_IN_SIZE = "max_read_in_size";

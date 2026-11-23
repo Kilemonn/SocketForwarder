@@ -14,7 +14,7 @@
 
 
 // Make sure version of built image matches
-const std::string VERSION = "0.4.0";
+const std::string VERSION = "0.5.0";
 
 std::function<void(int)> createShutdownHandler(forwarder::Forwarder& forwarder)
 {

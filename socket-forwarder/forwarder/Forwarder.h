@@ -68,7 +68,7 @@ namespace forwarder
         std::optional<std::pair<kt::TCPServerSocket, kt::TCPServerSocket>> initializeConnectionAcceptingSocketsForGroup(ForwarderGroup);
         std::optional<std::pair<kt::UDPSocket, kt::UDPSocket>> initializeUdpSocketsForConnection(ForwarderGroup);
 
-        void addSocketToTCPRecieverGroup(const std::string&, kt::TCPSocket);
+        void addSocketToTCPReceiverGroup(const std::string&, kt::TCPSocket);
         void addSocketToTCPSenderGroup(const std::string&, kt::TCPSocket);
 
     public:

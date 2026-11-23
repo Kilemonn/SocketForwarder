@@ -18,7 +18,7 @@ namespace forwarder
         // Register preconfigured addresses for specific groups
     }
 
-    void Forwarder::addSocketToTCPRecieverGroup(const std::string &groupId, kt::TCPSocket socket)
+    void Forwarder::addSocketToTCPReceiverGroup(const std::string &groupId, kt::TCPSocket socket)
     {
         std::string addressString = socket.getSocketAddress().getAddress().value_or("") + ":" + std::to_string(socket.getSocketAddress().getPortNumber());
 
@@ -101,7 +101,7 @@ namespace forwarder
                 try
                 {
                     kt::TCPSocket preConfigured(address);
-                    addSocketToTCPRecieverGroup(tcpConfig.groupId, preConfigured);
+                    addSocketToTCPReceiverGroup(tcpConfig.groupId, preConfigured);
                     LOG4CXX_INFO(logger, "Registered preconfigured address [" + address.getAddress().value_or("") + ":" + std::to_string(address.getPortNumber()) + "] in TCP group [" + tcpConfig.groupId + "]");
                 }
                 catch(const kt::SocketException& e)
@@ -166,7 +166,7 @@ namespace forwarder
 
                 LOG4CXX_INFO(logger, "[TCP] - Group [" << groupId << "] - Accepted new receiver connection from [" << addressString << "].");
 
-                addSocketToTCPRecieverGroup(groupId, socket);
+                addSocketToTCPReceiverGroup(groupId, socket);
             }
             catch(kt::TimeoutException e)
             {
