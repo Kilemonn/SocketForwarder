@@ -49,8 +49,8 @@ int main(int argc, char** argv, char* envp[])
     LOG4CXX_INFO(logger, "Using max read in size for UDP: [" << udpMaxReadInSize << "].");
     LOG4CXX_INFO(logger, "Binding to host address [" << hostAddress << "].");
 
-    std::vector<forwarder::ForwarderGroup> tcpGroups = forwarder::getForwarderGroups(envp, forwarder::TCP_GROUP_PREFIX);
-    std::vector<forwarder::ForwarderGroup> udpGroups = forwarder::getForwarderGroups(envp, forwarder::UDP_GROUP_PREFIX);
+    std::vector<forwarder::ForwarderGroup> tcpGroups = forwarder::getForwarderGroups(envp, forwarder::TCP_GROUP_PREFIX, true);
+    std::vector<forwarder::ForwarderGroup> udpGroups = forwarder::getForwarderGroups(envp, forwarder::UDP_GROUP_PREFIX, false);
 
     forwarder::ForwarderConfig config(hostAddress, ipVersion, tcpMaxReadInSize, udpMaxReadInSize, tcpGroups, udpGroups);
     // Validate ports and atleast 1 group here?

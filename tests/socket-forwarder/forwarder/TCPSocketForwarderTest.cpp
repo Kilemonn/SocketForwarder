@@ -63,7 +63,7 @@ namespace forwarder
 		ASSERT_FALSE(forwarder->tcpGroupWithIdExists(group1.groupId));
 		
 		kt::TCPSocket client1("localhost", group1.senderPort);
-		std::this_thread::sleep_for(20ms);
+		std::this_thread::sleep_for(50ms);
 
 		ASSERT_TRUE(forwarder->tcpGroupWithIdExists(group1.groupId));
 		ASSERT_EQ(1, forwarder->tcpGroupMemberCount(group1.groupId));

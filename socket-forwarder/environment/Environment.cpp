@@ -117,10 +117,10 @@ namespace forwarder
     /**
      * Expected format for connections is "<address>:<port>,<address2>:<port2>".
      */
-    std::vector<kt::SocketAddress> getPreconfiguredAddresses(const std::string& environmentVariable, const std::string defaultValue)
+    std::vector<kt::SocketAddress> getPreconfiguredAddresses(const std::string& environmentVariable, const std::string groupId, const bool isTCP)
     {
         std::vector<kt::SocketAddress> addresses;
-        std::vector<std::string> addressStrings = split(getEnvironmentVariableValueOrDefault(environmentVariable, defaultValue), ",");
+        std::vector<std::string> addressStrings = split(getEnvironmentVariableValueOrDefault(environmentVariable, ""), ",");
 
         for (const std::string& s : addressStrings)
         {
@@ -131,26 +131,26 @@ namespace forwarder
             }
             else if (parts.size() < 2)
             {
-                LOG4CXX_INFO(logger, "[UDP] - Unable to add address [" << s << "], expected format to be \"<address>:<port number>\".");
+                LOG4CXX_INFO(logger, "Unable to add address [" << s << "] to group [" << groupId << "], expected format to be \"<address>:<port number>\".");
             }
             else
             {
                 if (parts.size() > 2)
                 {
-                    LOG4CXX_INFO(logger, "[UDP] - Multiple ':' provided in address string [" << s << "]. Attempting to parse as address using first two elements [" << parts[0] << ", " << parts[1] << "].");
+                    LOG4CXX_INFO(logger, "Multiple ':' provided in address string [" << s << "] in group [" << groupId << "]. Attempting to parse as address using first two elements [" << parts[0] << ", " << parts[1] << "].");
                 }
 
                 unsigned short portNumber = static_cast<unsigned short>(std::atoi(parts[1].c_str()));
-                addrinfo info = kt::createUdpHints();
+                addrinfo info = isTCP ? kt::createTcpHints() : kt::createUdpHints();
                 std::expected<std::vector<kt::SocketAddress>, int> resolvedAddresses = kt::resolveToAddresses(parts[0], portNumber, info);
                 if (!resolvedAddresses)
                 {
-                    LOG4CXX_ERROR(logger, "[UDP] - Failed to resolve address [" << parts[0] << ":" << portNumber << "]. Address will not be added to UDP group.");
+                    LOG4CXX_ERROR(logger, "Failed to resolve address [" << parts[0] << ":" << portNumber << "]. Address will not be added to group [" << groupId << "].");
                 }
                 else
                 {
                     kt::SocketAddress addr = resolvedAddresses.value().at(0);
-                    LOG4CXX_INFO(logger, "[UDP] - Resolved and added pre-configured address [" << addr.getAddress().value_or("") + ":" + std::to_string(addr.getPortNumber()) << "] to UDP group.");
+                    LOG4CXX_INFO(logger, "Resolved and added pre-configured address [" << addr.getAddress().value_or("") + ":" + std::to_string(addr.getPortNumber()) << "] to group [" << groupId << "].");
                     addresses.push_back(addr);
                 }
             }
@@ -159,7 +159,7 @@ namespace forwarder
         return addresses;
     }
 
-    std::vector<ForwarderGroup> getForwarderGroups(char** envp, const std::string& prefix)
+    std::vector<ForwarderGroup> getForwarderGroups(char** envp, const std::string& prefix, const bool isTCP)
     {
         std::vector<ForwarderGroup> groups;
         std::vector<std::pair<std::string, std::string>> variables = getVariablesWithPrefix(prefix, envp);
@@ -185,7 +185,7 @@ namespace forwarder
                 continue;
             }
 
-            forwarderGroup.preConfiguredAddresses = getPreconfiguredAddresses(prefix + groupName + "." + forwarder::RECEIVER_PREFIX + forwarder::PRECONFIG_ADDRESSES_SUFFIX);
+            forwarderGroup.preConfiguredAddresses = getPreconfiguredAddresses(prefix + groupName + "." + forwarder::RECEIVER_PREFIX + forwarder::PRECONFIG_ADDRESSES_SUFFIX, groupName, isTCP);
 
             forwarderGroup.senderPort = static_cast<unsigned short>(std::stoi(senderPort.value()));
             forwarderGroup.receiverPort = static_cast<unsigned short>(std::stoi(receiverPort.value()));

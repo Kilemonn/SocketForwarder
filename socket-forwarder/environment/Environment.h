@@ -26,7 +26,7 @@ namespace forwarder
 
     // `socketforwarder.tcp.group.<my-group>.reciever.port`
     // `socketforwarder.tcp.group.<my-group>.sender.port`
-    // `socketforwarder.tcp.group.<my-group>.sender.preconfig_addresses`
+    // `socketforwarder.tcp.group.<my-group>.reciever.preconfig_addresses`
 
     // `socketforwarder.udp.group.<my-group>.reciever.port`
     // `socketforwarder.udp.group.<my-group>.sender.port`
@@ -56,9 +56,9 @@ namespace forwarder
 
     std::vector<std::pair<std::string, std::string>> getVariablesWithPrefix(const std::string&, char**);
 
-    std::vector<ForwarderGroup> getForwarderGroups(char**, const std::string&);
+    std::vector<ForwarderGroup> getForwarderGroups(char**, const std::string&, const bool);
 
-    std::vector<kt::SocketAddress> getPreconfiguredAddresses(const std::string&, const std::string = "");
+    std::vector<kt::SocketAddress> getPreconfiguredAddresses(const std::string&, const std::string, const bool);
 
     std::set<std::string> getGroupsWithPrefix(const std::string&, std::vector<std::pair<std::string, std::string>>);
 
