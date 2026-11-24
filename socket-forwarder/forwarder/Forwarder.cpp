@@ -386,7 +386,11 @@ namespace forwarder
             {
                 std::thread listeningThread(&Forwarder::startUDPListener, this, sockets.value(), udpConfig.groupId);
                 udpRunningThreads.push_back(std::move(listeningThread));
-                std::thread responderThread(&Forwarder::startUDPDataForwarder, this, udpConfig.groupId);
+                
+                // Pass in the receiver socket, which will be re-used to send the replies back to the registered recievers.
+                // Since we are re-using the same socket that the incoming message was initially recieved from underlying network
+                // mechanisms make sure that the response sent is properly captured and returned. Especially when the connection is going through docker-proxy.
+                std::thread responderThread(&Forwarder::startUDPDataForwarder, this, udpConfig.groupId, sockets.value().first);
                 udpRunningThreads.push_back(std::move(responderThread));
             }
         }
@@ -405,8 +409,7 @@ namespace forwarder
                 if (result)
                 {
                     std::string addressString = result.value().second.getAddress().value_or("") + ":" + std::to_string(result.value().second.getPortNumber());
-                    std::string message = result.value().first;
-                    LOG4CXX_INFO(logger, "[UDP] - New client joined UDP group from address [" << addressString << "] with request reply port [" << message << "]");
+                    LOG4CXX_INFO(logger, "[UDP] - New client joined UDP group from address [" << addressString << "].");
 
                     kt::SocketAddress address = result.value().second;
                     addAddressToReceiverUDPGroup(groupId, address);
@@ -444,10 +447,9 @@ namespace forwarder
         senderSocket.close();
     }
 
-    void Forwarder::startUDPDataForwarder(std::string groupId)
+    void Forwarder::startUDPDataForwarder(std::string groupId, kt::UDPSocket sendSocket)
     {
         LOG4CXX_INFO(logger, "[UDP] - Group [" + groupId + "] - Starting UDP data forwarder listener...");
-        kt::UDPSocket sendSocket;
         while (forwarderIsRunning)
         {
             auto messageQueue = udpMessageQueue.find(groupId);

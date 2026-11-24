@@ -59,7 +59,7 @@ namespace forwarder
 
         void startUDPForwarder();
         void startUDPListener(std::pair<kt::UDPSocket, kt::UDPSocket>, std::string);
-        void startUDPDataForwarder(std::string);
+        void startUDPDataForwarder(std::string, kt::UDPSocket);
 
         void startTCPForwarder();
         void startTCPConnectionListener(std::pair<kt::TCPServerSocket, kt::TCPServerSocket>, const std::string);
