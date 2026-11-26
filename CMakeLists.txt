@@ -25,6 +25,9 @@ set(FORWARDER_SOURCE
     socket-forwarder/main.cpp
     socket-forwarder/environment/Environment.cpp
     socket-forwarder/forwarder/Forwarder.cpp
+    socket-forwarder/forwarder/NetworkForwarder.cpp
+    socket-forwarder/forwarder/TCPForwarder.cpp
+    socket-forwarder/forwarder/UDPForwarder.cpp
     socket-forwarder/forwarder/ForwarderConfig.cpp
     socket-forwarder/logger/Logger.cpp
 )

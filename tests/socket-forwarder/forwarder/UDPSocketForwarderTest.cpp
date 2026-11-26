@@ -32,7 +32,7 @@ namespace forwarder
 			ForwarderConfig config(forwarder::HOST_IPV6_ADDRESS_DEFAULT, kt::InternetProtocolVersion::IPV6, forwarder::MAX_READ_IN_DEFAULT, forwarder::MAX_READ_IN_DEFAULT,
 				tcpGroups, udpGroups);
 
-			forwarder = Forwarder(config);
+			forwarder = std::move(Forwarder(config));
         }
 
         static void SetUpTestCase()
