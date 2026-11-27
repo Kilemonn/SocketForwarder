@@ -1,59 +1,29 @@
-cmake_minimum_required(VERSION 3.20)
-
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-set(PROJECT_NAME SocketForwarderTests)
-project(${PROJECT_NAME})
-
-# Reference: https://github.com/google/googletest/tree/main/googletest#incorporating-into-an-existing-cmake-project
 include(FetchContent)
 
 FetchContent_Declare(
   googletest
   DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-  # Specify the commit you depend on and update it regularly.
-  URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+  URL https://github.com/google/googletest/archive/refs/tags/v1.17.0.zip
 )
-
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 set(FORWARDER_TEST_SOURCE
     socket-forwarder/forwarder/TCPSocketForwarderTest.cpp
     socket-forwarder/forwarder/UDPSocketForwarderTest.cpp
-
-    socket-forwarder/sockets/SocketsTest.cpp
+    socket-forwarder/environment/EnvironmentTest.cpp
 )
 
-# This is duplicated from the parent CMakeLists.txt, since these are needed to build the tests
-set(FORWARDER_SOURCE_FOR_TEST
-    ../socket-forwarder/environment/Environment.cpp
-    ../socket-forwarder/forwarder/Forwarder.cpp
-    ../socket-forwarder/sockets/Sockets.cpp
-    ../socket-forwarder/logger/Logger.cpp
+add_executable(SocketForwarderTests ${FORWARDER_TEST_SOURCE})
+
+target_link_libraries(SocketForwarderTests PRIVATE
+    SocketForwarder_lib   # brings includes, CppSocketLibrary, log4cxx, bluetooth, etc.
+    GTest::gtest_main
 )
 
-add_executable(${PROJECT_NAME} ${FORWARDER_TEST_SOURCE} ${FORWARDER_SOURCE_FOR_TEST})
+include(GoogleTest)
+gtest_discover_tests(SocketForwarderTests)
 
-target_include_directories(SocketForwarderTests
-    PUBLIC ${SOCKET_LIB_SOURCE}/src
-    ${LOG4CXX_INCLUDE_DIRS}
+add_custom_target(check
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+    DEPENDS SocketForwarderTests
 )
-
-target_link_libraries(${PROJECT_NAME} PUBLIC
-    gtest_main
-    gtest
-    bluetooth
-    pthread
-    uuid
-    PUBLIC ${SOCKET_LIB_SOURCE}/libCppSocketLibrary.a
-    PRIVATE log4cxx
-)
-
-# Enable unit testing
-enable_testing()
-
-add_test(${PROJECT_NAME} ${PROJECT_NAME})
-
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS ${PROJECT_NAME})
