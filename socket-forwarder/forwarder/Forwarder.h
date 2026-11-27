@@ -23,6 +23,7 @@ namespace forwarder
 
     public:
         Forwarder(ForwarderConfig);
+        Forwarder& operator=(const Forwarder&) = delete;
 
         bool tcpGroupExists(std::string&);
         size_t tcpGroupCount(std::string&);

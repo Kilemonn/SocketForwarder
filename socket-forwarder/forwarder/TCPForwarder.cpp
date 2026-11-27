@@ -20,11 +20,12 @@ namespace forwarder
     {
         if (!config.getTcpGroups().empty())
         {
+            forwarderIsRunning = true;
             return startForwarder();
         }
         else
         {
-            LOG4CXX_INFO(logger, "[TCP] - No TCP groups were configured, TCP forwarding is disabled.");
+            LOG4CXX_INFO(logger, "No TCP groups were configured, TCP forwarding is disabled.");
             return false;
         }
     }
@@ -39,18 +40,18 @@ namespace forwarder
                 {
                     kt::TCPSocket preConfigured(address);
                     addSocketToTCPReceiverGroup(tcpConfig.groupId, preConfigured);
-                    LOG4CXX_INFO(logger, "Registered preconfigured address [" + address.getAddress().value_or("") + ":" + std::to_string(address.getPortNumber()) + "] in TCP group [" + tcpConfig.groupId + "]");
+                    LOG4CXX_INFO(logger, "[" + tcpConfig.groupId + "] Registered preconfigured address [" + address.getAddress().value_or("") + ":" + std::to_string(address.getPortNumber()) + "].");
                 }
                 catch(const kt::SocketException& e)
                 {
-                    LOG4CXX_WARN(logger, "Failed to connect to and register preconfigured address [" + address.getAddress().value_or("") + ":" + std::to_string(address.getPortNumber()) + "] in TCP group [" + tcpConfig.groupId + "] with error: " + e.what());
+                    LOG4CXX_WARN(logger, "[" + tcpConfig.groupId + "] Failed to connect to and register preconfigured address [" + address.getAddress().value_or("") + ":" + std::to_string(address.getPortNumber()) + "] with error: " + e.what());
                 }
             }
             
             std::optional<std::pair<kt::TCPServerSocket, kt::TCPServerSocket>> sockets = initializeConnectionAcceptingSocketsForGroup(tcpConfig);
             if (!sockets.has_value())
             {
-                LOG4CXX_ERROR(logger, "Failed to initialize TCP connection sockets for group [" + tcpConfig.groupId + "] using receiving port [" + std::to_string(tcpConfig.receiverPort) + "] and sending port [" + std::to_string(tcpConfig.senderPort) + "]. This group will be unavailable.");
+                LOG4CXX_ERROR(logger, "[" + tcpConfig.groupId + "] Failed to initialize TCP connection sockets using receiving port [" + std::to_string(tcpConfig.receiverPort) + "] and sending port [" + std::to_string(tcpConfig.senderPort) + "]. This group will be unavailable.");
             }
             else
             {
@@ -79,12 +80,12 @@ namespace forwarder
             }
             catch(const kt::SocketException e)
             {
-                LOG4CXX_ERROR(logger, "Failed to bind to sender listener socket for TCP group [" + group.groupId + "] on port [" + std::to_string(group.senderPort) + "].");
+                LOG4CXX_ERROR(logger, "[" + group.groupId + "] Failed to bind to sender listener socket on port [" + std::to_string(group.senderPort) + "].");
             }
         }
         catch(const kt::SocketException e)
         {
-            LOG4CXX_ERROR(logger, "Failed to bind to receiver listener socket for TCP group [" + group.groupId +"] on port [" + std::to_string(group.receiverPort) + "].");
+            LOG4CXX_ERROR(logger, "[" + group.groupId + "] Failed to bind to receiver listener socket on port [" + std::to_string(group.receiverPort) + "].");
         }
 
         return std::nullopt;
@@ -94,7 +95,7 @@ namespace forwarder
     {
         auto& [receiverSocket, senderSocket] = sockets;
 
-        LOG4CXX_INFO(logger, "[TCP] - Starting TCP connection listener for group [" + groupId + "]");
+        LOG4CXX_INFO(logger, "[" + groupId + "] Starting TCP connection listener...");
         while(forwarderIsRunning)
         {
             // Accept from receiver socket
@@ -103,7 +104,7 @@ namespace forwarder
                 kt::TCPSocket socket = receiverSocket.accept(10000); // microseconds
                 std::string addressString = socket.getSocketAddress().getAddress().value_or("") + ":" + std::to_string(socket.getSocketAddress().getPortNumber());
 
-                LOG4CXX_INFO(logger, "[TCP] - Group [" << groupId << "] - Accepted new receiver connection from [" << addressString << "].");
+                LOG4CXX_INFO(logger, "[" + groupId + "] Accepted new receiver connection from [" << addressString << "].");
 
                 addSocketToTCPReceiverGroup(groupId, socket);
             }
@@ -113,7 +114,7 @@ namespace forwarder
             }
             catch(kt::SocketException e)
             {
-                LOG4CXX_ERROR(logger, "[TCP] - Failed to accept incoming receiver client: " << e.what());
+                LOG4CXX_ERROR(logger, "[" + groupId + "] Failed to accept incoming receiver client: " << e.what());
             }
 
             // Accept from sender socket
@@ -122,7 +123,7 @@ namespace forwarder
                 kt::TCPSocket socket = senderSocket.accept(10000);
                 std::string addressString = socket.getSocketAddress().getAddress().value_or("") + ":" + std::to_string(socket.getSocketAddress().getPortNumber());
 
-                LOG4CXX_INFO(logger, "[TCP] - Group [" << groupId << "] - Accepted new sender connection from [" << addressString << "].");
+                LOG4CXX_INFO(logger, "[" + groupId + "] Accepted new sender connection from [" << addressString << "].");
                 addSocketToTCPSenderGroup(groupId, socket);
             }
             catch(kt::TimeoutException e)
@@ -131,11 +132,11 @@ namespace forwarder
             }
             catch(kt::SocketException e)
             {
-                LOG4CXX_ERROR(logger, "[TCP] - Failed to accept incoming sender client: " << e.what());
+                LOG4CXX_ERROR(logger, "[" + groupId + "] Failed to accept incoming sender client: " << e.what());
             }
         }
 
-        LOG4CXX_INFO(logger, "[TCP] - Stopping listener thread.");
+        LOG4CXX_INFO(logger, "[" << groupId << "] Stopping listener thread.");
 
         // If we exit the loop, close the server sockets
         receiverSocket.close();
@@ -144,7 +145,7 @@ namespace forwarder
 
     void TCPForwarder::startTCPDataForwarder(const std::string groupId)
     {
-        LOG4CXX_INFO(logger, "[TCP] - Starting TCP forwarder listener for group [" + groupId + "]");
+        LOG4CXX_INFO(logger, "[" + groupId + "] Starting TCP forwarder listener...");
         while (forwarderIsRunning)
         {
             std::vector<size_t> receiverToRemove;
@@ -171,13 +172,13 @@ namespace forwarder
                             }
                             
                             std::string uuidString = getNewUUID();
-                            LOG4CXX_DEBUG(logger, "[TCP - " + uuidString + "] - Group [" << groupId << "] with [" << received.size() << "] nodes. Received content [" << received << "] forwarding to receiver peers...");
+                            LOG4CXX_DEBUG(logger, "[" + groupId + " - " + uuidString + "] Group with [" << received.size() << "] nodes. Received content [" << received << "] forwarding to receiver peers...");
                             
                             std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
                             auto receivers = tcpReceiverSockets.find(groupId);
                             if (receivers == tcpReceiverSockets.end())
                             {
-                                LOG4CXX_DEBUG(logger, "[TCP - " + uuidString + "] - Group [" << groupId << "] No receiver sockets registered, dropping message.");
+                                LOG4CXX_DEBUG(logger, "[" + groupId + " - " + uuidString + "] No receiver sockets registered, dropping message.");
                                 continue;
                             }
 
@@ -185,32 +186,35 @@ namespace forwarder
                             {
                                 const kt::TCPSocket& forwardToSocket = *receiver;
                                 size_t distance = std::distance(receivers->second.begin(), receiver);
+                                std::string addressString = forwardToSocket.getSocketAddress().getAddress().value_or("") + ":" + std::to_string(forwardToSocket.getSocketAddress().getPortNumber());
                                 if (!forwardToSocket.connected())
                                 {
-                                    LOG4CXX_DEBUG(logger, "[TCP - " + uuidString + "] - Group [" << groupId << "], peer [" << distance << "] is no longer connected, marking for removal from group.");
+                                    
+                                    LOG4CXX_DEBUG(logger, "[" + groupId + " - " + uuidString + "] Peer [" << addressString << "] is no longer connected, marking for removal from group.");
                                     receiverToRemove.push_back(distance);
                                 }
                                 else
                                 {
                                     if (forwardToSocket.send(received, MSG_NOSIGNAL) > 0)
                                     {
-                                        LOG4CXX_DEBUG(logger, "[TCP - " + uuidString + "] - Group [" << groupId << "], successfully forwarded to peer [" << distance << "]");
+                                        LOG4CXX_DEBUG(logger, "[" + groupId + " - " + uuidString + "] Successfully forwarded to peer [" << addressString << "]");
                                     }
                                     else
                                     {
-                                        LOG4CXX_INFO(logger, "[TCP - " + uuidString + "] - Group [" << groupId << "], failed to send to peer [" << distance << "], marking for removal from group.");
+                                        LOG4CXX_INFO(logger, "[" + groupId + " - " + uuidString + "] Failed to send to peer [" << addressString << "], marking for removal from group.");
                                         receiverToRemove.push_back(distance);
                                     }
                                 }
                             }
 
                             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-                            LOG4CXX_DEBUG(logger, "[TCP - " + uuidString + "] - Group [" << groupId << "] took [" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms] to forward message to [" << receivers->second.size() << "] peers.");
+                            LOG4CXX_DEBUG(logger, "[" + groupId + " - " + uuidString + "] Took [" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms] to forward message to [" << receivers->second.size() << "] peers.");
                             
                             for (size_t index : receiverToRemove)
                             {
                                 std::vector<kt::TCPSocket>::iterator socketPosition = std::next(receivers->second.begin(), index);
-                                LOG4CXX_INFO(logger, "[TCP - " + uuidString + "] - Group [" << groupId << "] - Closing and removing receiver socket with address [" << socketPosition->getSocketAddress().getAddress().value_or("") + ":" + std::to_string(socketPosition->getSocketAddress().getPortNumber()) << "].");
+                                std::string address = socketPosition->getSocketAddress().getAddress().value_or("") + ":" + std::to_string(socketPosition->getSocketAddress().getPortNumber());
+                                LOG4CXX_INFO(logger, "[" + groupId + " - " + uuidString + "] Closing and removing receiver socket with address [" << address << "].");
                                 socketPosition->close();
                                 receivers->second.erase(socketPosition);
                             }
@@ -222,7 +226,8 @@ namespace forwarder
                 for (size_t index : senderToRemove)
                 {
                     std::vector<kt::TCPSocket>::iterator socketPosition = std::next(senderSockets->second.begin(), index);
-                    LOG4CXX_INFO(logger, "[TCP] - Group [" << groupId << "] - Closing and removing sender socket with address [" << socketPosition->getSocketAddress().getAddress().value_or("") + ":" + std::to_string(socketPosition->getSocketAddress().getPortNumber()) << "].");
+                    std::string address = socketPosition->getSocketAddress().getAddress().value_or("") + ":" + std::to_string(socketPosition->getSocketAddress().getPortNumber());
+                    LOG4CXX_INFO(logger, "[" << groupId << "] Closing and removing sender socket with address [" << address << "].");
                     socketPosition->close();
                     senderSockets->second.erase(socketPosition);
                 }
@@ -230,7 +235,7 @@ namespace forwarder
             }
         }
 
-        LOG4CXX_INFO(logger, "[TCP] - Group [" + groupId + "] Stopping forwarder thread.");
+        LOG4CXX_INFO(logger, "[" << groupId << "] Stopping forwarder thread.");
 
         // Once we are out of the loop just run through and close all sockets in this group
         auto senderSockets = tcpSenderSockets.find(groupId);
@@ -254,15 +259,19 @@ namespace forwarder
 
     void TCPForwarder::join()
     {
-        if (!forwarderIsRunning)
+        if (forwarderIsRunning)
         {
             return;
         }
 
         for (auto& thread : tcpRunningThreads)
         {
-            thread.join();
+            if (thread.joinable())
+            {
+                thread.join();
+            }
         }
+        tcpRunningThreads.clear();
     }
 
     void TCPForwarder::stop()
@@ -299,14 +308,14 @@ namespace forwarder
 
         if (tcpReceiverSockets.find(groupId) == tcpReceiverSockets.end())
         {
-            LOG4CXX_INFO(logger, "[TCP] - Creating new group with ID [" << groupId << "], adding address [" << addressString << "] to receiver group.");
+            LOG4CXX_INFO(logger, "[" << groupId << "] Creating new group, adding address [" << addressString << "] to receiver group.");
             // No existing groups with this ID, creating new
             std::vector<kt::TCPSocket> sockets = { socket };
             tcpReceiverSockets.insert(std::make_pair(groupId, sockets));
         }
         else
         {
-            LOG4CXX_DEBUG(logger, "[TCP] - Adding new connection [" << addressString << "] to receiver group [" << groupId << "].");
+            LOG4CXX_DEBUG(logger, "[" << groupId << "] Adding new connection [" << addressString << "] to receiver group.");
             tcpReceiverSockets[groupId].push_back(socket);
         }
     }
@@ -317,14 +326,14 @@ namespace forwarder
 
         if (tcpSenderSockets.find(groupId) == tcpSenderSockets.end())
         {
-            LOG4CXX_INFO(logger, "[TCP] - Creating new group with ID [" << groupId << "], adding address [" << addressString << "] to sender group.");
+            LOG4CXX_INFO(logger, "[" << groupId << "] Creating new group, adding address [" << addressString << "] to sender group.");
             // No existing groups with this ID, creating new
             std::vector<kt::TCPSocket> sockets = { socket };
             tcpSenderSockets.insert(std::make_pair(groupId, sockets));
         }
         else
         {
-            LOG4CXX_DEBUG(logger, "[TCP] - Adding new sender connection [" << addressString << "] to group [" << groupId << "].");
+            LOG4CXX_DEBUG(logger, "[" << groupId << "] Adding new sender connection [" << addressString << "] to group.");
             tcpSenderSockets[groupId].push_back(socket);
         }
     }

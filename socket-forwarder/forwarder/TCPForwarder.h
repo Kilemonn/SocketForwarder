@@ -40,6 +40,7 @@ namespace forwarder
 
     public:
         TCPForwarder(ForwarderConfig);
+        TCPForwarder& operator=(const TCPForwarder&) = delete;
         ~TCPForwarder();
 
         bool start() override;

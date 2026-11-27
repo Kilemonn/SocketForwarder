@@ -57,6 +57,7 @@ namespace forwarder
         void addAddressToReceiverUDPGroup(std::string, kt::SocketAddress);
     public:
         UDPForwarder(ForwarderConfig);
+        UDPForwarder& operator=(const UDPForwarder&) = delete;
         ~UDPForwarder();
 
         bool start() override;

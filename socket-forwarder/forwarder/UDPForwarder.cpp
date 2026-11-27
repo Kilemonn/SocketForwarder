@@ -19,26 +19,31 @@ namespace forwarder
     {
         if (!config.getUdpGroups().empty())
         {
+            forwarderIsRunning = true;
             return startUDPForwarder();
         }
         else
         {
-            LOG4CXX_INFO(logger, "[UDP] - No UDP groups were configured, UDP forwarding is disabled.");
+            LOG4CXX_INFO(logger, "No UDP groups were configured, UDP forwarding is disabled.");
             return false;
         }
     }
 
     void UDPForwarder::join()
     {
-        if (!forwarderIsRunning)
+        if (forwarderIsRunning)
         {
             return;
         }
 
         for (auto& thread : udpRunningThreads)
         {
-            thread.join();
+            if (thread.joinable())
+            {
+                thread.join();
+            }
         }
+        udpRunningThreads.clear();
     }
 
     void UDPForwarder::stop()
@@ -64,7 +69,7 @@ namespace forwarder
 
     void UDPForwarder::startUDPDataForwarder(std::string groupId, kt::UDPSocket sendSocket)
     {
-        LOG4CXX_INFO(logger, "[UDP] - Group [" + groupId + "] - Starting UDP data forwarder listener...");
+        LOG4CXX_INFO(logger, "[" + groupId + "] Starting UDP data forwarder listener...");
         while (forwarderIsRunning)
         {
             auto messageQueue = udpMessageQueue.find(groupId);
@@ -74,7 +79,7 @@ namespace forwarder
                 std::string message = messageQueue->second.front();
                 messageQueue->second.pop();
 
-                LOG4CXX_DEBUG(logger, "[UDP - " + uuidString + "] Group [" + groupId + "] - Received message [" << message << "] forwarding to peers.");
+                LOG4CXX_DEBUG(logger, "[" + groupId + " - " + uuidString + "] Received message [" << message << "] forwarding to peers.");
 
                 std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
                 auto receivers = udpReceiverAddresses.find(groupId);
@@ -83,14 +88,14 @@ namespace forwarder
                     for (auto& addr : receivers->second)
                     {
                         int result = sendSocket.sendTo(addr, message);
-                        LOG4CXX_DEBUG(logger, "[UDP - " + uuidString + "] Group [" + groupId + "] - Forwarded to peer with address: [" << addr.getAddress().value_or("") + ":" + std::to_string(addr.getPortNumber()) << "]. With result [" << result << "]");
+                        LOG4CXX_DEBUG(logger, "[" + groupId + " - " + uuidString + "] Forwarded to peer with address: [" << addr.getAddress().value_or("") + ":" + std::to_string(addr.getPortNumber()) << "]. With result [" << result << "]");
                     }
                 }
 
                 size_t peerCount = receivers != udpReceiverAddresses.end() ? receivers->second.size() : 0;
-                LOG4CXX_DEBUG(logger, "[UDP - " + uuidString + "] Group [" + groupId + "] - Forwarded to [" << peerCount << "] peer(s).");
+                LOG4CXX_DEBUG(logger, "[" + groupId + " - " + uuidString + "] Forwarded to [" << peerCount << "] peer(s).");
                 std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-                LOG4CXX_DEBUG(logger, "[UDP - " + uuidString + "] Group [" + groupId + "] - Took [" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms] to forward message to [" << peerCount << "] peers.");
+                LOG4CXX_DEBUG(logger, "[" + groupId + " - " + uuidString + "] Took [" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms] to forward message to [" << peerCount << "] peers.");
             }
             else
             {
@@ -99,7 +104,7 @@ namespace forwarder
             }
         }
 
-        LOG4CXX_INFO(logger, "[UDP] - Group [" + groupId + "] Stopping forwarder thread.");
+        LOG4CXX_INFO(logger, "[" + groupId + "] Stopping forwarder thread.");
     }
 
     std::optional<std::pair<kt::UDPSocket, kt::UDPSocket>> UDPForwarder::initializeUdpSocketsForConnection(ForwarderGroup udpGroup)
@@ -116,12 +121,12 @@ namespace forwarder
             }
             catch (const kt::SocketException e)
             {
-                LOG4CXX_ERROR(logger, "Failed to bind to sender listener socket for UDP group [" + udpGroup.groupId + "] on port [" + std::to_string(udpGroup.senderPort) + "].");
+                LOG4CXX_ERROR(logger, "[" + udpGroup.groupId + "] Failed to bind to sender listener socket on port [" + std::to_string(udpGroup.senderPort) + "].");
             }
         }
         catch (const kt::SocketException e)
         {
-            LOG4CXX_ERROR(logger, "Failed to bind to sender listener socket for UDP group [" + udpGroup.groupId + "] on port [" + std::to_string(udpGroup.senderPort) + "].");
+            LOG4CXX_ERROR(logger, "[" + udpGroup.groupId + "] Failed to bind to sender listener socket on port [" + std::to_string(udpGroup.senderPort) + "].");
         }
         return std::nullopt;
     }
@@ -135,18 +140,18 @@ namespace forwarder
                 try
                 {
                     addAddressToReceiverUDPGroup(udpConfig.groupId, address);
-                    LOG4CXX_INFO(logger, "Registered preconfigured address [" + address.getAddress().value_or("") + ":" + std::to_string(address.getPortNumber()) + "] in UDP group [" + udpConfig.groupId + "]");
+                    LOG4CXX_INFO(logger, "[" + udpConfig.groupId + "] Registered preconfigured address [" + address.getAddress().value_or("") + ":" + std::to_string(address.getPortNumber()) + "]");
                 }
                 catch(const kt::SocketException& e)
                 {
-                    LOG4CXX_WARN(logger, "Failed to connect to and register preconfigured address [" + address.getAddress().value_or("") + ":" + std::to_string(address.getPortNumber()) + "] in UDP group [" + udpConfig.groupId + "] with error: " + e.what());
+                    LOG4CXX_WARN(logger, "[" + udpConfig.groupId + "] Failed to connect to and register preconfigured address [" + address.getAddress().value_or("") + ":" + std::to_string(address.getPortNumber()) + "] with error: " + e.what());
                 }
             }
             
             std::optional<std::pair<kt::UDPSocket, kt::UDPSocket>> sockets = initializeUdpSocketsForConnection(udpConfig);
             if (!sockets.has_value())
             {
-                LOG4CXX_ERROR(logger, "Failed to initialize connection sockets for group [" + udpConfig.groupId + "] using receiving port [" + std::to_string(udpConfig.receiverPort) + "] and sending port [" + std::to_string(udpConfig.senderPort) + "]. This group will be unavailable.");
+                LOG4CXX_ERROR(logger, "[" + udpConfig.groupId + "] Failed to initialize connection sockets using receiving port [" + std::to_string(udpConfig.receiverPort) + "] and sending port [" + std::to_string(udpConfig.senderPort) + "]. This group will be unavailable.");
             }
             else
             {
@@ -167,7 +172,7 @@ namespace forwarder
     {
         auto& [receiverSocket, senderSocket] = sockets;
 
-        LOG4CXX_INFO(logger, "[UDP] - Group [" + groupId + "] Starting UDP forwarder connection listener...");
+        LOG4CXX_INFO(logger, "[" + groupId + "] Starting UDP forwarder connection listener...");
         while (forwarderIsRunning)
         {
             if (receiverSocket.ready(1))
@@ -176,7 +181,7 @@ namespace forwarder
                 if (result)
                 {
                     std::string addressString = result.value().second.getAddress().value_or("") + ":" + std::to_string(result.value().second.getPortNumber());
-                    LOG4CXX_INFO(logger, "[UDP] - New client joined UDP group from address [" << addressString << "].");
+                    LOG4CXX_INFO(logger, "[" + groupId + "] New client joined with address [" << addressString << "].");
 
                     kt::SocketAddress address = result.value().second;
                     addAddressToReceiverUDPGroup(groupId, address);
@@ -191,7 +196,7 @@ namespace forwarder
                     std::string addressString = result.value().second.getAddress().value_or("") + ":" + std::to_string(result.value().second.getPortNumber());
                     std::string& message = result.value().first;
 
-                    LOG4CXX_DEBUG(logger, "[UDP] - Group [" + groupId + "] - Enqueuing received message of size [" << message.size() << "] from sender.");
+                    LOG4CXX_DEBUG(logger, "[" + groupId + "] Enqueuing received message of size [" << message.size() << "] from sender.");
 
                     auto queue = udpMessageQueue.find(groupId);
                     if (queue == udpMessageQueue.end())
@@ -208,7 +213,7 @@ namespace forwarder
             }
         }
 
-        LOG4CXX_INFO(logger, "[UDP] - Group [" + groupId + "] Stopping listener thread.");
+        LOG4CXX_INFO(logger, "[" + groupId + "] Stopping listener thread.");
 
         receiverSocket.close();
         senderSocket.close();
