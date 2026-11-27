@@ -259,11 +259,6 @@ namespace forwarder
 
     void TCPForwarder::join()
     {
-        if (forwarderIsRunning)
-        {
-            return;
-        }
-
         for (auto& thread : tcpRunningThreads)
         {
             if (thread.joinable())

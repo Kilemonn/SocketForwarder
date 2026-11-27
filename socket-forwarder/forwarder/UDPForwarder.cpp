@@ -31,11 +31,6 @@ namespace forwarder
 
     void UDPForwarder::join()
     {
-        if (forwarderIsRunning)
-        {
-            return;
-        }
-
         for (auto& thread : udpRunningThreads)
         {
             if (thread.joinable())
