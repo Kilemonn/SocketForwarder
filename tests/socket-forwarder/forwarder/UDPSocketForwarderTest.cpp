@@ -32,7 +32,7 @@ namespace forwarder
 			ForwarderConfig config(forwarder::HOST_IPV6_ADDRESS_DEFAULT, kt::InternetProtocolVersion::IPV6, forwarder::MAX_READ_IN_DEFAULT, forwarder::MAX_READ_IN_DEFAULT,
 				tcpGroups, udpGroups);
 
-			forwarder = Forwarder(config);
+			forwarder.emplace(config);
         }
 
         static void SetUpTestCase()
@@ -59,7 +59,7 @@ namespace forwarder
 	{
         ForwarderGroup group1 = udpGroups.at(0);
 
-        ASSERT_EQ(0, forwarder->udpGroupMemberCount(group1.groupId));
+        ASSERT_EQ(0, forwarder->udpGroupCount(group1.groupId));
 
         const std::string message = "m";
         // Add client 1 to the group
@@ -69,7 +69,7 @@ namespace forwarder
 		std::this_thread::sleep_for(10ms);
 
         // Check group count is incremented since client 1 has joined
-		ASSERT_EQ(1, forwarder->udpGroupMemberCount(group1.groupId));
+		ASSERT_EQ(1, forwarder->udpGroupCount(group1.groupId));
 
 		kt::UDPSocket client2; // We don't need to bind since this is just a sender socket
         // Send to group from client2
@@ -78,7 +78,7 @@ namespace forwarder
 		std::this_thread::sleep_for(10ms);
 
         // Check group count is the same since it only includes receivers counts
-        ASSERT_EQ(1, forwarder->udpGroupMemberCount(group1.groupId));
+        ASSERT_EQ(1, forwarder->udpGroupCount(group1.groupId));
 
         // Check it is received at client 2
         ASSERT_TRUE(client1.ready());
@@ -153,7 +153,7 @@ namespace forwarder
 		std::vector<kt::UDPSocket> sockets;
         sockets.reserve(amountOfClients);
 
-        ASSERT_EQ(0, forwarder->udpGroupMemberCount(group.groupId));
+        ASSERT_EQ(0, forwarder->udpGroupCount(group.groupId));
 
         // int bufferSize = 0;
         // socklen_t size = sizeof(bufferSize);
@@ -169,7 +169,7 @@ namespace forwarder
 		}
 		std::this_thread::sleep_for(10ms);
 
-        ASSERT_TRUE(forwarder->udpGroupMemberCount(group.groupId) > 0 && forwarder->udpGroupMemberCount(group.groupId) <= amountOfClients);
+        ASSERT_TRUE(forwarder->udpGroupCount(group.groupId) > 0 && forwarder->udpGroupCount(group.groupId) <= amountOfClients);
 
 		std::string message = "TestNumerousClients";
         kt::UDPSocket sendSocket;
