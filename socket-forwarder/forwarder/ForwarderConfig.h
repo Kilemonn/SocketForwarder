@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <optional>
 
 #include <address/SocketAddress.h>
 
@@ -25,6 +26,8 @@ namespace forwarder
             std::vector<ForwarderGroup> tcpGroups;
             std::vector<ForwarderGroup> udpGroups;
 
+            std::string conflictingPortsMessage(std::string, std::string, unsigned short, std::string, std::string, unsigned short);
+
         public:
             ForwarderConfig(std::string, kt::InternetProtocolVersion, unsigned short, unsigned short, std::vector<ForwarderGroup>, std::vector<ForwarderGroup>);
             std::string getHostAddress() const;
@@ -33,5 +36,7 @@ namespace forwarder
             unsigned short getUdpMaxReadInSize() const;
             std::vector<ForwarderGroup> getTcpGroups() const;
             std::vector<ForwarderGroup> getUdpGroups() const;
+
+            std::optional<std::string> validate();
     };
 }

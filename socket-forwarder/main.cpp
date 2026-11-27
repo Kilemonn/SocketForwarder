@@ -53,7 +53,13 @@ int main(int argc, char** argv, char* envp[])
     std::vector<forwarder::ForwarderGroup> udpGroups = forwarder::getForwarderGroups(envp, forwarder::UDP_GROUP_PREFIX, false);
 
     forwarder::ForwarderConfig config(hostAddress, ipVersion, tcpMaxReadInSize, udpMaxReadInSize, tcpGroups, udpGroups);
-    // Validate ports and atleast 1 group here?
+    
+    std::optional<std::string> validationMessage = config.validate();
+    if (validationMessage.has_value())
+    {
+        LOG4CXX_ERROR(logger, "Failed to validate provided configuration because: [" << validationMessage.value() << "]");
+        return 1;
+    }
 
     forwarder::Forwarder forwarder(config);
 
