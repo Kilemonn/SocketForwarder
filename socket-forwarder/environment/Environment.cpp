@@ -190,8 +190,6 @@ namespace forwarder
             forwarderGroup.senderPort = static_cast<unsigned short>(std::stoi(senderPort.value()));
             forwarderGroup.receiverPort = static_cast<unsigned short>(std::stoi(receiverPort.value()));
 
-            // TODO: Check no other forwarder group is using these ports - this will fail on initialisation but we should validate and exit early
-
             groups.push_back(forwarderGroup);
         }
         
