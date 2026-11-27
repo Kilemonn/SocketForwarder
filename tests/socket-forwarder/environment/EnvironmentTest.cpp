@@ -54,8 +54,14 @@ namespace forwarder
         std::string property1 = prefix + "my-group.sender.port";
         std::string property1AndValue = property1 + "=12345";
 
-        char* envp[] = { property1AndValue.data(), "banana=value", "cherry", nullptr };
-        std::vector<std::pair<std::string, std::string>> variables = getVariablesWithPrefix(prefix, envp);
+        std::vector<std::string> envProperties = { property1AndValue.data(), "banana=value", "cherry" };
+
+        std::vector<char*> envp(envProperties.size());
+        for (auto& s : envProperties) {
+            envp.push_back(s.data());
+        }
+        envp.push_back(nullptr);
+        std::vector<std::pair<std::string, std::string>> variables = getVariablesWithPrefix(prefix, envp.data());
 
         ASSERT_EQ(1, variables.size());
         auto [key, value] = variables.at(0);
@@ -78,11 +84,16 @@ namespace forwarder
         std::string group3Property1 = prefix + "group3.property1";
         std::string group3Property1WithValue = group3Property1 + "=33333";
 
-        char* envp[] = { group1Property1WithValue.data(), group1Property2WithValue.data(), group2Property1WithValue.data(), 
-            group3Property1WithValue.data(), "without-prefix=55555", nullptr };
+        std::vector<std::string> envProperties = { group1Property1WithValue.data(), group1Property2WithValue.data(), group2Property1WithValue.data(), 
+            group3Property1WithValue.data(), "without-prefix=55555" };
 
+        std::vector<char*> envp(envProperties.size());
+        for (auto& s : envProperties) {
+            envp.push_back(s.data());
+        }
+        envp.push_back(nullptr);
         
-        std::vector<std::pair<std::string, std::string>> variables = getVariablesWithPrefix(prefix, envp);
+        std::vector<std::pair<std::string, std::string>> variables = getVariablesWithPrefix(prefix, envp.data());
         std::set<std::string> groups = getGroupsWithPrefix(prefix, variables);
 
         ASSERT_EQ(3, groups.size());
